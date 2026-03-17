@@ -110,6 +110,14 @@
     text-align: center;
   }
 
+  .hero-rabbit {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 24px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.1s forwards;
+  }
+
   .hero-eyebrow {
     font-size: 0.68rem;
     letter-spacing: 0.2em;
@@ -130,7 +138,8 @@
     opacity: 0;
     animation: fadeUp 0.9s 0.35s forwards;
   }
-  .hero h1 em { font-style: italic; color: var(--accent); }
+  .hero h1 { color: var(--accent); }
+  .hero h1 em { font-style: italic; color: var(--white); }
 
   .hero-sub {
     font-size: 0.85rem;
@@ -481,7 +490,7 @@
 
 <nav>
   <a href="#" class="logo">
-    <img src="assets/t12n-ai-rabbit.png" alt="t12n.ai" />
+    <img src="assets/t12n-ai-name.png" alt="t12n.ai" />
   </a>
   <ul>
     <li><a href="#about">About</a></li>
@@ -491,6 +500,7 @@
 </nav>
 
 <section class="hero">
+  <img src="assets/t12n-ai-rabbit.png" alt="t12n.ai rabbit logo" class="hero-rabbit" />
   <div class="hero-eyebrow">AI Transformation Consulting</div>
   <h1>The gap between <em>knowing</em> and doing is costing you.</h1>
   <p class="hero-sub">Speak your concern. Hear it back. Then let's close the distance between where you are and where AI can take you.</p>
