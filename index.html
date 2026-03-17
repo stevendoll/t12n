@@ -11,7 +11,8 @@
     --black: #0a0a0a;
     --white: #f5f0e8;
     --cream: #ede8de;
-    --accent: #c8f03c;
+    --accent: #4db6ac;
+    --accent-bright: #66d4c8;
     --muted: #4a4a4a;
     --border: rgba(245,240,232,0.12);
   }
@@ -44,7 +45,7 @@
   }
   .cursor-ring {
     width: 36px; height: 36px;
-    border: 1px solid rgba(200,240,60,0.4);
+    border: 1px solid rgba(77,182,172,0.4);
     border-radius: 50%;
     position: fixed;
     pointer-events: none;
@@ -78,13 +79,14 @@
     background: rgba(10,10,10,0.7);
   }
   .logo {
-    font-family: 'Instrument Serif', serif;
-    font-size: 1.4rem;
-    letter-spacing: -0.02em;
-    color: var(--white);
+    display: flex;
+    align-items: center;
     text-decoration: none;
   }
-  .logo span { color: var(--accent); }
+  .logo img {
+    height: 32px;
+    width: auto;
+  }
   nav ul { list-style: none; display: flex; gap: 40px; }
   nav ul a {
     color: rgba(245,240,232,0.5);
@@ -157,7 +159,7 @@
     transition: border-color 0.3s;
   }
   .voice-box:focus-within {
-    border-color: rgba(200,240,60,0.4);
+    border-color: rgba(77,182,172,0.4);
   }
 
   .input-row {
@@ -241,7 +243,7 @@
     gap: 10px;
   }
   .speak-btn:hover {
-    background: #d9ff4a;
+    background: var(--accent-bright);
     transform: translateY(-1px);
   }
   .speak-btn:disabled {
@@ -272,9 +274,9 @@
     font-size: 0.6rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: rgba(200,240,60,0.5);
-    background: rgba(200,240,60,0.06);
-    border: 1px solid rgba(200,240,60,0.15);
+    color: rgba(77,182,172,0.5);
+    background: rgba(77,182,172,0.06);
+    border: 1px solid rgba(77,182,172,0.15);
     padding: 3px 8px;
     border-radius: 2px;
     margin-left: 8px;
@@ -405,7 +407,7 @@
     transition: width 0.4s ease;
   }
   .service-card:hover::before { width: 100%; }
-  .service-card:hover { background: rgba(200,240,60,0.04); }
+  .service-card:hover { background: rgba(77,182,172,0.04); }
 
   .service-num {
     font-size: 0.65rem;
@@ -478,7 +480,9 @@
 <div class="bg-grid"></div>
 
 <nav>
-  <a href="#" class="logo">t12n<span>.ai</span></a>
+  <a href="#" class="logo">
+    <img src="assets/t12n.ai-logo-transparent.png" alt="t12n.ai" />
+  </a>
   <ul>
     <li><a href="#about">About</a></li>
     <li><a href="#services">Services</a></li>
@@ -617,7 +621,7 @@
         const ratio = buf[i] / 255;
         const barH  = ratio * H;
         const alpha = 0.15 + ratio * 0.85;
-        ctx2d.fillStyle = `rgba(200,240,60,${alpha})`;
+        ctx2d.fillStyle = `rgba(77,182,172,${alpha})`;
         ctx2d.fillRect(x, H - barH, barW - 1, barH);
         x += barW;
       }
@@ -682,112 +686,95 @@
       const SAMPLE_RATE = 44100;
       const wsUrl = `wss://api.cartesia.ai/tts/websocket?api_key=${API_KEY}&cartesia_version=2024-06-10`;
       const ws = new WebSocket(wsUrl);
+      ws.binaryType = 'arraybuffer';
 
-      // Streaming playback via AudioContext scheduled buffers
       let nextPlayTime = 0;
       let firstChunk = true;
-      let done = false;
 
-      await new Promise((resolve, reject) => {
-        ws.onopen = () => {
-          statusMsg.textContent = 'Synthesizing...';
-          ws.send(JSON.stringify({
-            context_id: crypto.randomUUID(),
-            model_id: 'sonic-english',
-            transcript: text,
-            voice: { mode: 'id', id: VOICE_ID },
-            output_format: {
-              container: 'raw',
-              encoding: 'pcm_f32le',
-              sample_rate: SAMPLE_RATE
-            },
-            continue: false
-          }));
-        };
+      const scheduleChunk = (pcm) => {
+        if (firstChunk) {
+          performance.mark('tts-first-chunk');
+          performance.measure('tts-latency', 'tts-start', 'tts-first-chunk');
+          const ms = Math.round(performance.getEntriesByName('tts-latency')[0].duration);
+          latBadge.textContent = `${ms}ms`;
+          latBadge.classList.add('visible');
+          firstChunk = false;
+          // Start playback in 20ms — just enough to avoid underrun
+          nextPlayTime = audioCtx.currentTime + 0.02;
+          statusMsg.className = 'status-msg playing';
+          statusMsg.textContent = '▶ Playing...';
+          btnText.textContent = 'Playing';
+          startVisualizerFromCtx();
+        }
+        const audioBuf = audioCtx.createBuffer(1, pcm.length, SAMPLE_RATE);
+        audioBuf.copyToChannel(pcm, 0);
+        const src = audioCtx.createBufferSource();
+        src.buffer = audioBuf;
+        src.connect(analyser);
+        src.start(nextPlayTime);
+        nextPlayTime += audioBuf.duration;
+      };
 
-        ws.onmessage = async (e) => {
-          // Cartesia sends either binary (raw PCM) or JSON (control/error)
-          if (e.data instanceof ArrayBuffer || e.data instanceof Blob) {
-            // Raw binary PCM frame
-            const arrayBuf = e.data instanceof Blob ? await e.data.arrayBuffer() : e.data;
-            const pcm = new Float32Array(arrayBuf);
+      ws.onopen = () => {
+        statusMsg.textContent = 'Synthesizing...';
+        ws.send(JSON.stringify({
+          context_id: crypto.randomUUID(),
+          model_id: 'sonic-english',
+          transcript: text,
+          voice: { mode: 'id', id: VOICE_ID },
+          output_format: { container: 'raw', encoding: 'pcm_f32le', sample_rate: SAMPLE_RATE },
+          continue: false
+        }));
+      };
 
-            if (firstChunk) {
-              performance.mark('tts-first-chunk');
-              performance.measure('tts-latency', 'tts-start', 'tts-first-chunk');
-              const ms = Math.round(performance.getEntriesByName('tts-latency')[0].duration);
-              latBadge.textContent = `${ms}ms`;
-              latBadge.classList.add('visible');
-              firstChunk = false;
-              nextPlayTime = audioCtx.currentTime + 0.05; // small initial buffer
-              statusMsg.className = 'status-msg playing';
-              statusMsg.textContent = '▶ Playing...';
-              btnText.textContent = 'Playing';
-              startVisualizerFromCtx();
+      ws.onmessage = (e) => {
+        if (e.data instanceof ArrayBuffer) {
+          scheduleChunk(new Float32Array(e.data));
+        } else {
+          try {
+            const msg = JSON.parse(e.data);
+            if (msg.type === 'error') throw new Error(JSON.stringify(msg));
+            if (msg.data) {
+              // base64 fallback
+              const bin = atob(msg.data);
+              const bytes = new Uint8Array(bin.length);
+              for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+              scheduleChunk(new Float32Array(bytes.buffer));
             }
+          } catch (err) {
+            console.error('WS msg error:', err);
+          }
+        }
+      };
 
-            // Schedule PCM chunk for gapless playback
-            const audioBuf = audioCtx.createBuffer(1, pcm.length, SAMPLE_RATE);
-            audioBuf.copyToChannel(pcm, 0);
-            const src = audioCtx.createBufferSource();
-            src.buffer = audioBuf;
-            src.connect(analyser);
-            src.start(nextPlayTime);
-            nextPlayTime += audioBuf.duration;
+      ws.onerror = () => {
+        stopVisualizer();
+        resetBtn();
+        statusMsg.className = 'status-msg error';
+        statusMsg.textContent = 'WebSocket connection failed';
+      };
 
+      ws.onclose = () => {
+        if (firstChunk) {
+          // Closed before any audio — show error
+          stopVisualizer();
+          resetBtn();
+          statusMsg.className = 'status-msg error';
+          statusMsg.textContent = 'No audio received';
+          return;
+        }
+        // Poll until scheduled audio finishes, then clean up
+        const poll = () => {
+          if (audioCtx.currentTime < nextPlayTime) {
+            setTimeout(poll, 100);
           } else {
-            // JSON control message
-            try {
-              const msg = JSON.parse(e.data);
-              if (msg.type === 'error') { ws.close(); reject(new Error(JSON.stringify(msg))); return; }
-              if (msg.data) {
-                // Base64-encoded audio chunk (older API versions)
-                const binary = atob(msg.data);
-                const bytes = new Uint8Array(binary.length);
-                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-                const pcm = new Float32Array(bytes.buffer);
-
-                if (firstChunk) {
-                  performance.mark('tts-first-chunk');
-                  performance.measure('tts-latency', 'tts-start', 'tts-first-chunk');
-                  const ms = Math.round(performance.getEntriesByName('tts-latency')[0].duration);
-                  latBadge.textContent = `${ms}ms`;
-                  latBadge.classList.add('visible');
-                  firstChunk = false;
-                  nextPlayTime = audioCtx.currentTime + 0.05;
-                  statusMsg.className = 'status-msg playing';
-                  statusMsg.textContent = '▶ Playing...';
-                  btnText.textContent = 'Playing';
-                  startVisualizerFromCtx();
-                }
-
-                const audioBuf = audioCtx.createBuffer(1, pcm.length, SAMPLE_RATE);
-                audioBuf.copyToChannel(pcm, 0);
-                const src = audioCtx.createBufferSource();
-                src.buffer = audioBuf;
-                src.connect(analyser);
-                src.start(nextPlayTime);
-                nextPlayTime += audioBuf.duration;
-              }
-              if (msg.done) { done = true; ws.close(); resolve(); }
-            } catch (_) {}
+            stopVisualizer();
+            resetBtn();
+            statusMsg.textContent = '';
           }
         };
-
-        ws.onerror = (e) => reject(new Error('WebSocket connection failed'));
-        ws.onclose = () => {
-          if (!done && firstChunk) reject(new Error('Connection closed with no audio'));
-          else resolve();
-        };
-      });
-
-      // Wait for all scheduled audio to finish playing
-      const remaining = nextPlayTime - audioCtx.currentTime;
-      if (remaining > 0) await new Promise(r => setTimeout(r, remaining * 1000 + 200));
-
-      stopVisualizer();
-      resetBtn();
-      statusMsg.textContent = '';
+        poll();
+      };
 
     } catch (err) {
       console.error('TTS error:', err);
@@ -795,6 +782,7 @@
       resetBtn();
       statusMsg.className = 'status-msg error';
       statusMsg.textContent = `Error: ${err.message}`;
+      return;
     }
   };
 
