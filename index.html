@@ -190,7 +190,7 @@
     line-height: 1.1;
     letter-spacing: -0.02em;
     padding: 24px 28px;
-    min-height: 160px;
+    min-height: 120px;
     text-align: center;
     cursor: text;
   }
@@ -206,21 +206,27 @@
 
   /* Mic button */
   .mic-btn {
-    background: transparent;
+    background: var(--accent);
     border: none;
-    border-left: 1px solid var(--border);
-    color: rgba(245,240,232,0.3);
+    border-left: 1px solid var(--accent);
+    color: var(--black);
     padding: 20px 16px;
     cursor: none;
-    transition: color 0.2s;
+    transition: all 0.2s;
     display: flex;
     align-items: flex-start;
     padding-top: 24px;
     flex-shrink: 0;
+    border-radius: 0 2px 2px 0;
   }
-  .mic-btn:hover { color: var(--accent); }
+  .mic-btn:hover {
+    background: var(--accent-bright);
+    border-left-color: var(--accent-bright);
+  }
   .mic-btn.recording {
-    color: #ff6b6b;
+    background: #ff6b6b;
+    border-left-color: #ff6b6b;
+    color: white;
     animation: micPulse 1s ease-in-out infinite;
   }
   @keyframes micPulse {
@@ -244,7 +250,7 @@
   }
 
   .speak-btn {
-    background: var(--accent);
+    background: #ffd700;
     color: var(--black);
     border: none;
     font-family: 'DM Mono', monospace;
@@ -258,10 +264,10 @@
     transition: all 0.2s;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
   }
   .speak-btn:hover {
-    background: var(--accent-bright);
+    background: #ffed4e;
     transform: translateY(-1px);
   }
   .speak-btn:disabled {
@@ -525,7 +531,10 @@
       <div class="voice-controls">
         <span class="voice-hint">↵ enter to hear it back<span id="latencyBadge" class="latency-badge"></span></span>
         <button class="speak-btn" id="speakBtn" onclick="speak()">
-          <span class="btn-text" id="btnText">Hear it</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+          <span class="btn-text" id="btnText">Play</span>
         </button>
       </div>
     </div>
@@ -807,7 +816,7 @@
     const btn     = document.getElementById('speakBtn');
     const btnText = document.getElementById('btnText');
     btn.disabled = false;
-    btnText.textContent = 'Hear it';
+    btnText.textContent = 'Play';
   }
 
   // ── Web Speech API mic input ─────────────────────────────────────────────────
