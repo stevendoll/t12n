@@ -177,7 +177,7 @@
     gap: 0;
   }
 
-  .voice-box textarea {
+  .voice-box .heading-input {
     flex: 1;
     background: transparent;
     border: none;
@@ -185,17 +185,23 @@
     color: var(--accent);
     font-family: 'Instrument Serif', serif;
     font-size: clamp(2.5rem, 6vw, 5rem);
-    font-style: normal;
+    font-style: italic;
     font-weight: normal;
     line-height: 1.1;
     letter-spacing: -0.02em;
     padding: 24px 28px;
-    resize: none;
     min-height: 160px;
     text-align: center;
+    cursor: text;
   }
-  .voice-box textarea::placeholder {
+  .voice-box .heading-input em {
+    color: var(--white);
+    font-style: italic;
+  }
+  .voice-box .heading-input:empty::before {
+    content: attr(data-placeholder);
     color: rgba(245,240,232,0.3);
+    font-style: italic;
   }
 
   /* Mic button */
@@ -509,7 +515,7 @@
   <div class="voice-container">
     <div class="voice-box">
       <div class="input-row">
-        <textarea id="messageInput" rows="3" placeholder="The gap between knowing and doing is costing us.">The gap between knowing and doing is costing us.</textarea>
+        <div id="messageInput" class="heading-input" contenteditable="true" data-placeholder="The gap between knowing and doing is costing us.">The gap between <em>knowing</em> and doing is costing us.</div>
         <button class="mic-btn" id="micBtn" title="Speak your concern (hold to record)">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm0 2a2 2 0 0 0-2 2v6a2 2 0 0 0 4 0V5a2 2 0 0 0-2-2zm7 8a1 1 0 0 1 1 1 8 8 0 0 1-7 7.938V21h2a1 1 0 0 1 0 2H9a1 1 0 0 1 0-2h2v-1.062A8 8 0 0 1 4 12a1 1 0 0 1 2 0 6 6 0 0 0 12 0 1 1 0 0 1 1-1z"/>
@@ -673,7 +679,7 @@
     const btnText   = document.getElementById('btnText');
     const statusMsg = document.getElementById('statusMsg');
     const latBadge  = document.getElementById('latencyBadge');
-    const text      = document.getElementById('messageInput').value.trim();
+    const text      = document.getElementById('messageInput').textContent.trim();
 
     if (!text) return;
 
@@ -819,7 +825,7 @@
 
     recognition.onresult = e => {
       const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
-      document.getElementById('messageInput').value = transcript;
+      document.getElementById('messageInput').textContent = transcript;
     };
 
     recognition.onend = () => {
@@ -827,7 +833,7 @@
       micBtn.classList.remove('recording');
       micBtn.title = 'Speak your concern';
       // Auto-submit if there's text
-      const text = document.getElementById('messageInput').value.trim();
+      const text = document.getElementById('messageInput').textContent.trim();
       if (text) speak();
     };
 
