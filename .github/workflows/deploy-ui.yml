@@ -1,0 +1,62 @@
+name: Deploy UI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ui/**'
+      - '.github/workflows/deploy-ui.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  build:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install UI dependencies
+        working-directory: ui
+        run: npm ci
+
+      - name: Build UI
+        working-directory: ui
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_CARTESIA_API_KEY: ${{ secrets.VITE_CARTESIA_API_KEY }}
+          VITE_CARTESIA_VOICE_ID: ${{ secrets.VITE_CARTESIA_VOICE_ID }}
+        run: npm run build
+
+      - name: Sync to S3
+        run: |
+          aws s3 sync ui/dist/ s3://${{ secrets.S3_BUCKET }} \
+            --delete --region ${{ env.AWS_REGION }}
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+
+      - name: Smoke test
+        run: curl -sf https://t12n.ai > /dev/null && echo "UI smoke test passed"
