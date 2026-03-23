@@ -140,11 +140,13 @@ Resources:
   ApiDomainMapping:
     Type: AWS::ApiGatewayV2::ApiMapping
     Condition: HasCertificate
-    DependsOn: ApiCustomDomain
+    DependsOn:
+      - ApiCustomDomain
+      - T12nHttpApiApiGatewayDefaultStage
     Properties:
       ApiId: !Ref T12nHttpApi
       DomainName: !Ref ApiDomainName
-      Stage: $default
+      Stage: !Ref T12nHttpApiApiGatewayDefaultStage
 
   # ── EventBridge Warmup ───────────────────────────────────────────────────────
 
