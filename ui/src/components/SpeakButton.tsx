@@ -11,7 +11,10 @@ export default function SpeakButton({ state, disabled, onClick }: Props) {
     <button
       onClick={onClick}
       disabled={disabled || state !== 'idle'}
-      className="bg-[#FFFF33] text-[var(--black)] border-none font-mono text-[0.72rem] font-medium tracking-[0.12em] uppercase px-7 py-3 rounded-sm cursor-none transition-all flex items-center gap-2 hover:bg-[#FFFF66] hover:-translate-y-px disabled:opacity-50 disabled:translate-y-0"
+      className={[
+        'bg-[#FFFF33] text-[var(--black)] border-none font-mono text-[0.72rem] font-medium tracking-[0.12em] uppercase px-7 py-3 rounded-sm cursor-none transition-colors flex items-center gap-2 hover:bg-[#FFFF66] disabled:opacity-50',
+        state === 'idle' ? 'animate-[heartbeat_2.5s_ease-in-out_infinite]' : '',
+      ].join(' ')}
     >
       <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
         <path d="M8 5v14l11-7z" />

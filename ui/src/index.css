@@ -72,6 +72,15 @@ body::before {
   50%       { opacity: 0.4; }
 }
 
+@keyframes heartbeat {
+  0%   { transform: scale(1);    box-shadow: 0 0 0 0 rgba(255,255,51,0); }
+  14%  { transform: scale(1.06); box-shadow: 0 0 8px 3px rgba(255,255,51,0.5); }
+  28%  { transform: scale(1);    box-shadow: 0 0 4px 1px rgba(255,255,51,0.2); }
+  42%  { transform: scale(1.04); box-shadow: 0 0 6px 2px rgba(255,255,51,0.35); }
+  70%  { transform: scale(1);    box-shadow: 0 0 0 0 rgba(255,255,51,0); }
+  100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(255,255,51,0); }
+}
+
 /* Sections above noise overlay */
 section, nav, footer {
   position: relative;

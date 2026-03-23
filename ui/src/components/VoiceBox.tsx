@@ -7,8 +7,6 @@ import Visualizer, { type VisualizerHandle } from './Visualizer'
 const CARTESIA_API_KEY = import.meta.env.VITE_CARTESIA_API_KEY as string
 const VOICE_ID = import.meta.env.VITE_CARTESIA_VOICE_ID as string
 const SAMPLE_RATE = 44100
-const AUTO_PLAY_DELAY_MS = 15_000
-
 export default function VoiceBox() {
   const [conversationId] = useState(() => {
     const stored = sessionStorage.getItem('t12n_conversation_id')
@@ -18,7 +16,6 @@ export default function VoiceBox() {
     return id
   })
 
-  const [, setNextOrder] = useState(0)
   const [ttsState, setTtsState] = useState<'idle' | 'connecting' | 'playing'>('idle')
   const [status, setStatus] = useState('')
   const [statusType, setStatusType] = useState<'' | 'error' | 'playing'>('')
@@ -28,22 +25,14 @@ export default function VoiceBox() {
   const audioCtxRef = useRef<AudioContext | null>(null)
   const analyserRef = useRef<AnalyserNode | null>(null)
   const vizRef = useRef<VisualizerHandle>(null)
-  const autoPlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Load icebreaker on mount
   useEffect(() => {
     getIcebreaker()
-      .then(async (icebreaker) => {
+      .then((icebreaker) => {
         if (inputRef.current) {
           inputRef.current.innerHTML = formatText(icebreaker.text)
         }
-
-        setNextOrder(1)
-
-        // Auto-play after 15 seconds
-        autoPlayTimerRef.current = setTimeout(() => {
-          speak(icebreaker.text)
-        }, AUTO_PLAY_DELAY_MS)
       })
       .catch(() => {
         // API not available — use default text
@@ -51,10 +40,6 @@ export default function VoiceBox() {
           inputRef.current.innerHTML = formatText('The gap between knowing and doing is costing us.')
         }
       })
-
-    return () => {
-      if (autoPlayTimerRef.current) clearTimeout(autoPlayTimerRef.current)
-    }
   }, [conversationId])
 
   const formatText = (text: string): string => {
@@ -67,11 +52,6 @@ export default function VoiceBox() {
   const speak = useCallback(async (textOverride?: string) => {
     const text = textOverride ?? getInputText()
     if (!text) return
-
-    if (autoPlayTimerRef.current) {
-      clearTimeout(autoPlayTimerRef.current)
-      autoPlayTimerRef.current = null
-    }
 
     setTtsState('connecting')
     setStatus('Connecting...')
