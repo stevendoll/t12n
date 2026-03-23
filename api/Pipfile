@@ -7,6 +7,7 @@ name = "pypi"
 boto3 = "*"
 aws-lambda-powertools = {extras = ["all"], version = "*"}
 pydantic = ">=2.0"
+requests = "*"
 
 [dev-packages]
 pytest = "*"

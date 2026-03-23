@@ -19,7 +19,7 @@ from aws_lambda_powertools.event_handler import APIGatewayHttpResolver, CORSConf
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
 import db  # noqa: F401
-from routers import icebreakers, turns, admin
+from api.routers import icebreakers, turns, admin
 
 logger = Logger(service="t12n-api")
 metrics = Metrics(namespace="T12nApi")

@@ -8,10 +8,11 @@ import uuid
 import boto3
 from datetime import datetime, timezone
 
-ENDPOINT = os.environ.get("DYNAMODB_ENDPOINT", "http://localhost:8000")
+ENDPOINT = os.environ.get("DYNAMODB_ENDPOINT")  # None = use real AWS
 REGION = "us-east-1"
 
-dynamodb = boto3.resource("dynamodb", region_name=REGION, endpoint_url=ENDPOINT)
+_kwargs = {"endpoint_url": ENDPOINT} if ENDPOINT else {}
+dynamodb = boto3.resource("dynamodb", region_name=REGION, **_kwargs)
 
 ICEBREAKERS = [
     "The gap between knowing and doing is costing us.",
