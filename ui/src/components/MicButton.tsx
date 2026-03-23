@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 
 interface Props {
   onTranscript: (text: string) => void
+  onEnd: () => void
   onError: (msg: string) => void
   disabled?: boolean
 }
@@ -9,7 +10,7 @@ interface Props {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnySpeechRecognition = any
 
-export default function MicButton({ onTranscript, onError, disabled }: Props) {
+export default function MicButton({ onTranscript, onEnd, onError, disabled }: Props) {
   const [recording, setRecording] = useState(false)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null)
@@ -39,7 +40,10 @@ export default function MicButton({ onTranscript, onError, disabled }: Props) {
         .map(r => r[0].transcript).join('')
       onTranscript(transcript)
     }
-    rec.onend = () => setRecording(false)
+    rec.onend = () => {
+      setRecording(false)
+      onEnd()
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rec.onerror = (e: any) => {
       setRecording(false)

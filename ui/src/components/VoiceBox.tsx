@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { getIcebreaker, postTurn } from '../lib/api'
-import type { Turn } from '../lib/types'
+import { getIcebreaker } from '../lib/api'
 import MicButton from './MicButton'
 import SpeakButton from './SpeakButton'
 import Visualizer, { type VisualizerHandle } from './Visualizer'
@@ -19,8 +18,7 @@ export default function VoiceBox() {
     return id
   })
 
-  const [_turns, setTurns] = useState<Turn[]>([])
-  const [nextOrder, setNextOrder] = useState(0)
+  const [, setNextOrder] = useState(0)
   const [ttsState, setTtsState] = useState<'idle' | 'connecting' | 'playing'>('idle')
   const [status, setStatus] = useState('')
   const [statusType, setStatusType] = useState<'' | 'error' | 'playing'>('')
@@ -40,12 +38,6 @@ export default function VoiceBox() {
           inputRef.current.innerHTML = formatText(icebreaker.text)
         }
 
-        const turn = await postTurn(conversationId, {
-          order: 0,
-          text: icebreaker.text,
-          speaker: 'ai',
-        })
-        setTurns([turn.turn])
         setNextOrder(1)
 
         // Auto-play after 15 seconds
@@ -90,7 +82,9 @@ export default function VoiceBox() {
 
     try {
       if (!audioCtxRef.current) audioCtxRef.current = new AudioContext()
-      await audioCtxRef.current.resume()
+      // Fire resume without awaiting — browser may block it until a user gesture,
+      // and awaiting a blocked promise would hang the entire speak() call.
+      void audioCtxRef.current.resume()
       const audioCtx = audioCtxRef.current
 
       analyserRef.current = audioCtx.createAnalyser()
@@ -170,6 +164,14 @@ export default function VoiceBox() {
           setStatusType('error')
           return
         }
+        // If AudioContext is still suspended (no user gesture), don't poll forever
+        if (audioCtx.state === 'suspended') {
+          vizRef.current?.stop()
+          setTtsState('idle')
+          setStatus('')
+          setStatusType('')
+          return
+        }
         const poll = () => {
           if (audioCtx.currentTime < nextPlayTime) {
             setTimeout(poll, 100)
@@ -190,54 +192,10 @@ export default function VoiceBox() {
     }
   }, [])
 
-  const handleUserSubmit = async () => {
-    const text = getInputText()
-    if (!text || ttsState !== 'idle') return
-
-    if (autoPlayTimerRef.current) {
-      clearTimeout(autoPlayTimerRef.current)
-      autoPlayTimerRef.current = null
-    }
-
-    try {
-      const response = await postTurn(conversationId, {
-        order: nextOrder,
-        text,
-        speaker: 'user',
-      })
-
-      const newTurns = [response.turn]
-      if (response.aiReply) {
-        const aiTurn: Turn = {
-          conversationId,
-          order: response.aiReply.order,
-          text: response.aiReply.text,
-          speaker: 'ai',
-          createdAt: new Date().toISOString(),
-        }
-        newTurns.push(aiTurn)
-
-        if (inputRef.current) {
-          inputRef.current.innerHTML = formatText(response.aiReply.text)
-        }
-
-        setNextOrder(response.aiReply.order + 1)
-        await speak(response.aiReply.text)
-      } else {
-        setNextOrder(nextOrder + 1)
-      }
-
-      setTurns(prev => [...prev, ...newTurns])
-    } catch (err) {
-      setStatus(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`)
-      setStatusType('error')
-    }
-  }
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      void handleUserSubmit()
+      void speak()
     }
   }
 
@@ -264,6 +222,7 @@ export default function VoiceBox() {
           />
           <MicButton
             onTranscript={handleMicTranscript}
+            onEnd={() => void speak()}
             onError={handleMicError}
             disabled={ttsState !== 'idle'}
           />
