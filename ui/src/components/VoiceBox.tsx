@@ -7,6 +7,7 @@ import Visualizer, { type VisualizerHandle } from './Visualizer'
 const CARTESIA_API_KEY = import.meta.env.VITE_CARTESIA_API_KEY as string
 const VOICE_ID = import.meta.env.VITE_CARTESIA_VOICE_ID as string
 const SAMPLE_RATE = 44100
+
 export default function VoiceBox() {
   const [conversationId] = useState(() => {
     const stored = sessionStorage.getItem('t12n_conversation_id')
@@ -26,7 +27,6 @@ export default function VoiceBox() {
   const analyserRef = useRef<AnalyserNode | null>(null)
   const vizRef = useRef<VisualizerHandle>(null)
 
-  // Load icebreaker on mount
   useEffect(() => {
     getIcebreaker()
       .then((icebreaker) => {
@@ -35,7 +35,6 @@ export default function VoiceBox() {
         }
       })
       .catch(() => {
-        // API not available — use default text
         if (inputRef.current && !inputRef.current.textContent?.trim()) {
           inputRef.current.innerHTML = formatText('The gap between knowing and doing is costing us.')
         }
@@ -43,7 +42,6 @@ export default function VoiceBox() {
   }, [conversationId])
 
   const formatText = (text: string): string => {
-    // Wrap "knowing" in em for styling
     return text.replace(/\bknowing\b/gi, '<em>knowing</em>')
   }
 
@@ -62,8 +60,6 @@ export default function VoiceBox() {
 
     try {
       if (!audioCtxRef.current) audioCtxRef.current = new AudioContext()
-      // Fire resume without awaiting — browser may block it until a user gesture,
-      // and awaiting a blocked promise would hang the entire speak() call.
       void audioCtxRef.current.resume()
       const audioCtx = audioCtxRef.current
 
@@ -144,7 +140,6 @@ export default function VoiceBox() {
           setStatusType('error')
           return
         }
-        // If AudioContext is still suspended (no user gesture), don't poll forever
         if (audioCtx.state === 'suspended') {
           vizRef.current?.stop()
           setTtsState('idle')
@@ -189,42 +184,40 @@ export default function VoiceBox() {
   }
 
   return (
-    <div className="w-full max-w-[900px] opacity-0 animate-[fadeUp_1s_0.35s_forwards]">
-      <div className="border border-[var(--border)] bg-[rgba(245,240,232,0.03)] backdrop-blur-sm rounded-sm p-1 transition-colors focus-within:border-[rgba(77,182,172,0.4)]">
-        <div className="flex items-start gap-0">
+    <div className="voicebox">
+      <div className="voicebox-box">
+        <div className="voicebox-input-area">
           <div
             ref={inputRef}
             contentEditable
             suppressContentEditableWarning
             data-placeholder="The gap between knowing and doing is costing us."
             onKeyDown={handleKeyDown}
-            className="flex-1 bg-transparent border-none outline-none text-[var(--accent)] font-serif text-[clamp(2.5rem,6vw,5rem)] italic font-normal leading-[1.1] tracking-[-0.02em] px-7 py-6 min-h-[120px] text-center cursor-text [&_em]:text-[var(--white)] [&_em]:italic empty:before:content-[attr(data-placeholder)] empty:before:text-[rgba(245,240,232,0.3)] empty:before:italic"
-          />
-          <MicButton
-            onTranscript={handleMicTranscript}
-            onEnd={() => void speak()}
-            onError={handleMicError}
-            disabled={ttsState !== 'idle'}
+            className="voicebox-input"
           />
         </div>
-        <div className="flex justify-between items-center px-4 py-[10px] pl-7 border-t border-[var(--border)]">
-          <span className="text-[0.65rem] tracking-[0.1em] uppercase text-[rgba(245,240,232,0.25)]">
-            ↵ enter to hear it back
-            {latencyMs !== null && (
-              <span className="inline-block text-[0.6rem] tracking-[0.12em] uppercase text-[rgba(77,182,172,0.5)] bg-[rgba(77,182,172,0.06)] border border-[rgba(77,182,172,0.15)] px-2 py-[3px] rounded-sm ml-2 align-middle">
-                {latencyMs}ms
-              </span>
-            )}
+        <div className="voicebox-toolbar">
+          <span className="voicebox-hint">
+            ↵ enter and let's talk
+            {latencyMs !== null && <span className="voicebox-latency">{latencyMs}ms</span>}
           </span>
-          <SpeakButton state={ttsState} onClick={() => void speak()} />
+          <div className="voicebox-toolbar-right">
+            <MicButton
+              onTranscript={handleMicTranscript}
+              onEnd={() => void speak()}
+              onError={handleMicError}
+              disabled={ttsState !== 'idle'}
+            />
+            <SpeakButton state={ttsState} onClick={() => void speak()} />
+          </div>
         </div>
       </div>
       <Visualizer ref={vizRef} />
       {status && (
-        <div className={[
-          'text-[0.68rem] tracking-[0.1em] text-center mt-[14px] min-h-5 transition-all',
-          statusType === 'error' ? 'text-[#ff6b6b]' : statusType === 'playing' ? 'text-[var(--accent)]' : 'text-[rgba(245,240,232,0.3)]',
-        ].join(' ')}>
+        <div
+          className="voicebox-status"
+          style={{ color: statusType === 'error' ? '#ff6b6b' : statusType === 'playing' ? 'var(--accent)' : 'rgba(245,240,232,0.3)' }}
+        >
           {status}
         </div>
       )}

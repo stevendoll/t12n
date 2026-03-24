@@ -38,14 +38,8 @@ export default function Cursor() {
 
   return (
     <>
-      <div
-        ref={dotRef}
-        className="fixed w-[10px] h-[10px] bg-[var(--accent)] rounded-full pointer-events-none z-[9999] -translate-x-1/2 -translate-y-1/2 transition-transform duration-100 mix-blend-difference"
-      />
-      <div
-        ref={ringRef}
-        className="fixed w-9 h-9 border border-[rgba(77,182,172,0.4)] rounded-full pointer-events-none z-[9998] -translate-x-1/2 -translate-y-1/2 transition-all duration-[180ms] ease-out"
-      />
+      <div ref={dotRef} style={{ position: 'fixed', width: 10, height: 10, background: 'var(--accent)', borderRadius: '50%', pointerEvents: 'none', zIndex: 9999, transform: 'translate(-50%,-50%)' }} />
+      <div ref={ringRef} style={{ position: 'fixed', width: 36, height: 36, border: '1px solid rgba(77,182,172,0.4)', borderRadius: '50%', pointerEvents: 'none', zIndex: 9998, transform: 'translate(-50%,-50%)' }} />
     </>
   )
 }
