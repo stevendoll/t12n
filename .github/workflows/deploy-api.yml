@@ -5,7 +5,9 @@ on:
     branches: [main]
     paths:
       - 'api/**'
+      - 'scripts/**'
       - '.github/workflows/deploy-api.yml'
+  workflow_dispatch:
 
 permissions:
   id-token: write
