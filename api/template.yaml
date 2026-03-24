@@ -140,9 +140,7 @@ Resources:
   ApiDomainMapping:
     Type: AWS::ApiGatewayV2::ApiMapping
     Condition: HasCertificate
-    DependsOn:
-      - ApiCustomDomain
-      - T12nHttpApiApiGatewayDefaultStage
+    DependsOn: ApiCustomDomain
     Properties:
       ApiId: !Ref T12nHttpApi
       DomainName: !Ref ApiDomainName
@@ -166,7 +164,7 @@ Resources:
       FunctionName: !Ref T12nApiFunction
       Action: lambda:InvokeFunction
       Principal: events.amazonaws.com
-      SourceArn: !GetAtt WarmupRule.Arn
+      SourceArn: !Sub "arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/${WarmupRule}"
 
 Conditions:
   HasCertificate: !Not [!Equals [!Ref AcmCertificateArn, ""]]
