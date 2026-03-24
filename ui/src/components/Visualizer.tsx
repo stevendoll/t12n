@@ -55,12 +55,7 @@ const Visualizer = forwardRef<VisualizerHandle>((_, ref) => {
     return () => ro.disconnect()
   }, [])
 
-  return (
-    <canvas
-      ref={canvasRef}
-      className="w-full h-14 block mt-3 opacity-0 transition-opacity duration-400"
-    />
-  )
+  return <canvas ref={canvasRef} style={{ display: 'block', width: '100%', height: '56px', opacity: 0, transition: 'opacity 0.4s' }} />
 })
 
 Visualizer.displayName = 'Visualizer'
