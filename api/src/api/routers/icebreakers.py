@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 
 from aws_lambda_powertools import Logger
 from aws_lambda_powertools.event_handler.api_gateway import Router
+from aws_lambda_powertools.event_handler.exceptions import NotFoundError
 from boto3.dynamodb.conditions import Key
 
 import db
@@ -20,7 +21,7 @@ def get_icebreaker():
     )
     items = response.get("Items", [])
     if not items:
-        return {"statusCode": 404, "body": {"error": "No active icebreakers found"}}
+        raise NotFoundError("No active icebreakers found")
 
     item = random.choice(items)
     icebreaker = Icebreaker(**item)
