@@ -9,10 +9,6 @@ on:
       - '.github/workflows/deploy-api.yml'
   workflow_dispatch:
 
-permissions:
-  id-token: write
-  contents: read
-
 env:
   AWS_REGION: us-east-1
   STACK_NAME: t12n-api
@@ -46,6 +42,9 @@ jobs:
     name: SAM deploy
     needs: test
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     defaults:
       run:
         working-directory: api

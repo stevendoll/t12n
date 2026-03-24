@@ -6,10 +6,7 @@ on:
     paths:
       - 'ui/**'
       - '.github/workflows/deploy-ui.yml'
-
-permissions:
-  id-token: write
-  contents: read
+  workflow_dispatch:
 
 env:
   AWS_REGION: us-east-1
@@ -18,6 +15,9 @@ jobs:
   build:
     name: Build and deploy
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
