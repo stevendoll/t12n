@@ -1,26 +1,36 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { getIcebreaker } from '../lib/api'
+import { getIcebreaker, postTurn } from '../lib/api'
+import type { ChatMessage, Speaker } from '../lib/types'
 import MicButton from './MicButton'
 import SpeakButton from './SpeakButton'
 import Visualizer, { type VisualizerHandle } from './Visualizer'
 import ChatBubble from './ChatBubble'
 
 const CARTESIA_API_KEY = import.meta.env.VITE_CARTESIA_API_KEY as string
-const VOICE_ID = import.meta.env.VITE_CARTESIA_VOICE_ID as string
 const SAMPLE_RATE = 44100
 
-type ChatMsg = { id: number; role: 'user' | 'assistant'; text: string }
+const VOICE_IDS: Record<Speaker, string> = {
+  visitor:     import.meta.env.VITE_CARTESIA_VOICE_ID as string,
+  consultant1: '6ccbfb76-1fc6-48f7-b71d-91ac6298247b', // Tessa — Kind Companion
+  consultant2: 'db69127a-dbaf-4fa9-b425-2fe67680c348', // Clint — Rugged Actor
+}
+
+// Strip Cartesia emotion/expression tags before sending to TTS —
+// Cartesia's WebSocket API doesn't interpret them in this format
+function stripSsml(text: string): string {
+  return text
+    .replace(/<emotion[^>]*\/?>/gi, '')
+    .replace(/<\/emotion>/gi, '')
+    .replace(/\[laughter\]/gi, '')
+    .replace(/\[clears throat\]/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
 
 const pause = (ms: number) => new Promise<void>(r => setTimeout(r, ms))
 
-// Mock: simulates a 2-turn AI consultant response (fast — pacing is handled by the caller)
-function mockConversationTurns(_userText: string): Promise<[string, string]> {
-  return new Promise(resolve =>
-    setTimeout(() => resolve([
-      "That friction you're describing — knowing AI matters but not knowing what to actually do — is exactly where most organizations get stuck. The gap isn't ambition, it's execution architecture.",
-      "The organizations that move fastest start with a focused 90-day sprint: identify the highest-leverage use case, build proof of value, and create internal momentum. What does your current AI initiative look like — do you have a clear first target, or are you still mapping the landscape?",
-    ]), 400)
-  )
+function formatText(text: string): string {
+  return text.replace(/\bknowing\b/gi, '<em>knowing</em>')
 }
 
 export default function VoiceBox() {
@@ -32,56 +42,48 @@ export default function VoiceBox() {
     return id
   })
 
-  const [ttsState, setTtsState] = useState<'idle' | 'connecting' | 'playing'>('idle')
-  const [status, setStatus] = useState('')
-  const [statusType, setStatusType] = useState<'' | 'error' | 'playing'>('')
-  const [latencyMs, setLatencyMs] = useState<number | null>(null)
-  const [messages, setMessages] = useState<ChatMsg[]>([])
-  const [conversing, setConversing] = useState(false)
+  const orderRef = useRef(0)
 
-  const inputRef = useRef<HTMLDivElement>(null)
-  const audioCtxRef = useRef<AudioContext | null>(null)
-  const analyserRef = useRef<AnalyserNode | null>(null)
-  const vizRef = useRef<VisualizerHandle>(null)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  type ConvState = 'idle' | 'visitor-speaking' | 'loading' | 'consultant-speaking' | 'waiting'
+  const [convState,  setConvState]  = useState<ConvState>('idle')
+  const [ttsState,   setTtsState]   = useState<'idle' | 'connecting' | 'playing'>('idle')
+  const [messages,   setMessages]   = useState<ChatMessage[]>([])
+  const [status,     setStatus]     = useState('')
+  const [statusType, setStatusType] = useState<'' | 'error' | 'playing'>('')
+  const [latencyMs,  setLatencyMs]  = useState<number | null>(null)
+
+  const inputRef       = useRef<HTMLDivElement>(null)
+  const audioCtxRef    = useRef<AudioContext | null>(null)
+  const analyserRef    = useRef<AnalyserNode | null>(null)
+  const vizRef         = useRef<VisualizerHandle>(null)
+  const messagesEndRef  = useRef<HTMLDivElement>(null)
+  const voiceboxBoxRef  = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     getIcebreaker()
-      .then((icebreaker) => {
-        if (inputRef.current) {
-          inputRef.current.innerHTML = formatText(icebreaker.text)
-        }
-      })
+      .then(ib => { if (inputRef.current) inputRef.current.innerHTML = formatText(ib.text) })
       .catch(() => {
-        if (inputRef.current && !inputRef.current.textContent?.trim()) {
+        if (inputRef.current && !inputRef.current.textContent?.trim())
           inputRef.current.innerHTML = formatText('The gap between knowing and doing is costing us.')
-        }
       })
-  }, [conversationId])
+  }, [])
 
-  // Scroll to latest bubble after each render with new messages
+  // After each new bubble, scroll the page so the text box stays visible at bottom
   useEffect(() => {
-    const el = messagesEndRef.current
-    if (!el) return
-    // rAF ensures the new bubble is in the DOM before we scroll
+    if (messages.length === 0) return
     requestAnimationFrame(() => {
-      el.scrollIntoView({ behavior: 'smooth', block: 'end' })
+      voiceboxBoxRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
     })
   }, [messages])
 
-  const formatText = (text: string): string => {
-    return text.replace(/\bknowing\b/gi, '<em>knowing</em>')
-  }
-
   const getInputText = () => inputRef.current?.textContent?.trim() ?? ''
 
-  // Short soft chime using the Web Audio API oscillator
   const playPopSound = useCallback(() => {
     try {
       if (!audioCtxRef.current) audioCtxRef.current = new AudioContext()
       const ctx = audioCtxRef.current
       void ctx.resume()
-      const osc = ctx.createOscillator()
+      const osc  = ctx.createOscillator()
       const gain = ctx.createGain()
       osc.type = 'sine'
       osc.connect(gain)
@@ -95,22 +97,17 @@ export default function VoiceBox() {
     } catch { /* ignore */ }
   }, [])
 
-  // Speaks text via Cartesia WebSocket, returns a Promise that resolves when audio finishes
-  const speakText = useCallback((text: string): Promise<void> => {
+  const speakAs = useCallback((speaker: Speaker, text: string): Promise<void> => {
     return new Promise((resolve, reject) => {
+      const voiceId = VOICE_IDS[speaker]
+      const clean   = stripSsml(text)  // strip emotion tags — not supported in WS format
 
-      // No TTS configured — simulate with a timed delay so the flow still works locally
-      if (!CARTESIA_API_KEY || !VOICE_ID) {
+      if (!CARTESIA_API_KEY || !voiceId) {
         setTtsState('playing')
         setStatus('▶ Playing...')
         setStatusType('playing')
-        const ms = Math.max(800, text.length * 45)
-        setTimeout(() => {
-          setTtsState('idle')
-          setStatus('')
-          setStatusType('')
-          resolve()
-        }, ms)
+        const ms = Math.max(800, clean.length * 45)
+        setTimeout(() => { setTtsState('idle'); setStatus(''); setStatusType(''); resolve() }, ms)
         return
       }
 
@@ -134,10 +131,9 @@ export default function VoiceBox() {
         ws.binaryType = 'arraybuffer'
 
         let nextPlayTime = 0
-        let firstChunk = true
-        let settled = false
+        let firstChunk   = true
+        let settled      = false
 
-        // Called exactly once — cleans up and resolves the outer Promise
         const finish = () => {
           if (settled) return
           settled = true
@@ -162,9 +158,8 @@ export default function VoiceBox() {
 
         const scheduleChunk = (pcm: Float32Array) => {
           if (firstChunk) {
-            const ms = Math.round(performance.now() - startMark)
-            setLatencyMs(ms)
-            firstChunk = false
+            setLatencyMs(Math.round(performance.now() - startMark))
+            firstChunk   = false
             nextPlayTime = audioCtx.currentTime + 0.02
             setTtsState('playing')
             setStatus('▶ Playing...')
@@ -183,10 +178,10 @@ export default function VoiceBox() {
         ws.onopen = () => {
           setStatus('Synthesizing...')
           const payload: Record<string, unknown> = {
-            context_id: crypto.randomUUID(),
-            model_id: 'sonic-english',
-            transcript: text,
-            voice: { mode: 'id', id: VOICE_ID },
+            context_id:    crypto.randomUUID(),
+            model_id:      'sonic-english',
+            transcript:    clean,
+            voice:         { mode: 'id', id: voiceId },
             output_format: { container: 'raw', encoding: 'pcm_f32le', sample_rate: SAMPLE_RATE },
           }
           payload['continue'] = false
@@ -198,123 +193,128 @@ export default function VoiceBox() {
             scheduleChunk(new Float32Array(e.data))
           } else {
             try {
-              const msg = JSON.parse(e.data as string) as { type?: string; data?: string; status_code?: number }
-              // Cartesia sends {"type":"error","done":true} as its stream-end signal
-              // after delivering all audio. Only treat it as fatal if no audio arrived yet.
+              const msg = JSON.parse(e.data as string) as { type?: string; data?: string }
               if (msg.type === 'error' || msg.type === 'done') {
                 if (firstChunk) {
-                  fail(`TTS error: ${(msg as Record<string,unknown>).error as string ?? JSON.stringify(msg)}`)
+                  const errText = (msg as Record<string, unknown>).error as string | undefined
+                  fail(`TTS error: ${errText ?? JSON.stringify(msg)}`)
                 } else {
-                  const now = audioCtx.currentTime
-                  const remaining = Math.max(50, (nextPlayTime - now) * 1000 + 150)
+                  const remaining = Math.max(50, (nextPlayTime - audioCtx.currentTime) * 1000 + 150)
                   setTimeout(finish, remaining)
                 }
                 return
               }
               if (msg.data) {
-                const bin = atob(msg.data)
+                const bin   = atob(msg.data)
                 const bytes = new Uint8Array(bin.length)
                 for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
                 scheduleChunk(new Float32Array(bytes.buffer))
               }
-            } catch (err) {
-              console.error('WS msg error:', err)
-            }
+            } catch (err) { console.error('WS msg error:', err) }
           }
         }
 
-        ws.onerror = () => { fail('Connection failed') }
+        ws.onerror = () => fail('Connection failed')
 
         ws.onclose = () => {
           if (firstChunk) { fail('No audio received'); return }
-          // Fallback: WS closed without a "done" message — wait for remaining audio
-          const now = audioCtx.currentTime
-          const remaining = Math.max(50, (nextPlayTime - now) * 1000 + 150)
+          const remaining = Math.max(50, (nextPlayTime - audioCtx.currentTime) * 1000 + 150)
           setTimeout(finish, remaining)
         }
       } catch (err) {
-        vizRef.current?.stop()
         setTtsState('idle')
-        setStatus(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`)
-        setStatusType('error')
         reject(err)
       }
     })
   }, [])
 
-  // Full conversation flow: speak input → user bubble → mock API → 2 assistant bubbles
-  const handlePlay = useCallback(async () => {
-    const text = getInputText()
-    if (!text || ttsState !== 'idle' || conversing) return
+  const addBubble = useCallback((speaker: Speaker, text: string) => {
+    setMessages(prev => [...prev, { id: crypto.randomUUID(), speaker, text }])
+  }, [])
 
-    setConversing(true)
-    setStatus('')
-    setStatusType('')
+  const handleSubmit = useCallback(async (text: string) => {
+    if (!text.trim()) return
+
+    const visitorOrder = orderRef.current
 
     try {
-      // 1. Speak the user's typed/spoken text
-      await speakText(text)
+      setConvState('visitor-speaking')
+      await speakAs('visitor', text)
 
-      // 2. Sound + user bubble left + clear input
       playPopSound()
-      setMessages(prev => [...prev, { id: Date.now(), role: 'user', text }])
+      addBubble('visitor', text)
       if (inputRef.current) inputRef.current.innerHTML = ''
 
-      // 3. Fetch mock turns while pausing 2s before showing the first reply
-      const [turn1, turn2] = await Promise.all([mockConversationTurns(text), pause(2000)])
+      setConvState('loading')
+      setStatus('Alex and Jamie are thinking...')
+      setStatusType('')
 
-      // 4. Sound + first assistant bubble right + speak it
-      playPopSound()
-      setMessages(prev => [...prev, { id: Date.now() + 1, role: 'assistant', text: turn1 }])
-      await speakText(turn1)
+      const [response] = await Promise.all([
+        postTurn(conversationId, { order: visitorOrder, text, speaker: 'visitor' }),
+        pause(2000),
+      ])
 
-      // 5. 2s pause, then sound + second assistant bubble right + speak it
-      await pause(2000)
-      playPopSound()
-      setMessages(prev => [...prev, { id: Date.now() + 2, role: 'assistant', text: turn2 }])
-      await speakText(turn2)
+      orderRef.current = visitorOrder + 3
+      setStatus('')
+      setConvState('consultant-speaking')
+
+      const replies = response.consultantReplies ?? []
+
+      const alexReply  = replies.find(r => r.speaker === 'consultant1')
+      const jamieReply = replies.find(r => r.speaker === 'consultant2')
+
+      if (alexReply) {
+        playPopSound()
+        addBubble('consultant1', alexReply.text)
+        await speakAs('consultant1', alexReply.text)
+      }
+
+      if (jamieReply) {
+        await pause(2000)
+        playPopSound()
+        addBubble('consultant2', jamieReply.text)
+        await speakAs('consultant2', jamieReply.text)
+      }
+
+      setConvState('waiting')
+      // Blink cursor in text box as affordance to reply
+      requestAnimationFrame(() => inputRef.current?.focus())
 
     } catch (err) {
       setStatus(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`)
       setStatusType('error')
-    } finally {
-      setConversing(false)
+      setConvState('waiting')
     }
-  }, [ttsState, conversing, speakText, playPopSound])
+  }, [conversationId, speakAs, playPopSound, addBubble])
+
+  const handlePlay = useCallback(() => {
+    const text = getInputText()
+    if (text) void handleSubmit(text)
+  }, [handleSubmit])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      void handlePlay()
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handlePlay() }
   }
 
-  const handleMicTranscript = (text: string) => {
-    if (inputRef.current) inputRef.current.textContent = text
-  }
-
-  const handleMicError = (msg: string) => {
-    setStatus(msg)
-    setStatusType('error')
-  }
+  const isBusy = convState !== 'idle' && convState !== 'waiting'
 
   return (
     <div className="voicebox">
       {messages.length > 0 && (
         <div className="chat-area">
           {messages.map(msg => (
-            <ChatBubble key={msg.id} role={msg.role} text={msg.text} />
+            <ChatBubble key={msg.id} speaker={msg.speaker} text={msg.text} />
           ))}
           <div ref={messagesEndRef} />
         </div>
       )}
-      <div className="voicebox-box">
+
+      <div ref={voiceboxBoxRef} className="voicebox-box">
         <div className="voicebox-input-area">
           <div
             ref={inputRef}
             contentEditable
             suppressContentEditableWarning
-            data-placeholder="The gap between knowing and doing is costing us."
             onKeyDown={handleKeyDown}
             className="voicebox-input"
           />
@@ -326,24 +326,30 @@ export default function VoiceBox() {
           </span>
           <div className="voicebox-toolbar-right">
             <MicButton
-              onTranscript={handleMicTranscript}
-              onEnd={() => void handlePlay()}
-              onError={handleMicError}
-              disabled={ttsState !== 'idle' || conversing}
+              onTranscript={t => { if (inputRef.current) inputRef.current.textContent = t }}
+              onEnd={handlePlay}
+              onError={msg => { setStatus(msg); setStatusType('error') }}
+              disabled={isBusy}
             />
             <SpeakButton
               state={ttsState}
-              onClick={() => void handlePlay()}
-              disabled={conversing}
+              onClick={handlePlay}
+              disabled={isBusy}
             />
           </div>
         </div>
       </div>
+
       <Visualizer ref={vizRef} />
+
       {status && (
         <div
           className="voicebox-status"
-          style={{ color: statusType === 'error' ? '#ff6b6b' : statusType === 'playing' ? 'var(--accent)' : 'rgba(245,240,232,0.3)' }}
+          style={{
+            color: statusType === 'error'   ? '#ff6b6b'
+                 : statusType === 'playing' ? 'var(--accent)'
+                 : 'rgba(245,240,232,0.4)',
+          }}
         >
           {status}
         </div>

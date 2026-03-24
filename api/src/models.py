@@ -22,25 +22,29 @@ class IcebreakerResponse(T12nModel):
     text: str
 
 
+Speaker = Literal["visitor", "consultant1", "consultant2"]
+
+
 class TurnRequest(T12nModel):
     order: int = Field(ge=0)
     text: str = Field(min_length=1, max_length=2000)
-    speaker: Literal["ai", "user"]
+    speaker: Speaker
 
 
 class Turn(T12nModel):
     conversation_id: str
     order: int
     text: str
-    speaker: Literal["ai", "user"]
+    speaker: Speaker
     created_at: str
 
 
-class AiReply(T12nModel):
+class ConsultantReply(T12nModel):
     order: int
     text: str
+    speaker: Literal["consultant1", "consultant2"]
 
 
 class TurnResponse(T12nModel):
     turn: Turn
-    ai_reply: AiReply | None = None
+    consultant_replies: list[ConsultantReply] | None = None

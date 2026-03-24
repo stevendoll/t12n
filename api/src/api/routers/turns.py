@@ -5,8 +5,8 @@ from aws_lambda_powertools.event_handler.api_gateway import Router
 from boto3.dynamodb.conditions import Key
 
 import db
-from bedrock_helpers import generate_reply
-from models import TurnRequest, Turn, AiReply, TurnResponse
+from bedrock_helpers import generate_consultant_replies
+from models import TurnRequest, Turn, ConsultantReply, TurnResponse
 
 logger = Logger(service="t12n-api")
 router = Router()
@@ -14,13 +14,10 @@ router = Router()
 
 @router.post("/conversations/<conversation_id>/turns")
 def post_turn(conversation_id: str):
-    from aws_lambda_powertools.event_handler import APIGatewayHttpResolver
-    app: APIGatewayHttpResolver = router.current_event  # type: ignore
-
     body = TurnRequest.model_validate(router.current_event.json_body)
     now = datetime.now(timezone.utc).isoformat()
 
-    # Save the incoming turn (idempotent: condition prevents duplicate writes)
+    # Save the incoming turn (idempotent)
     try:
         db.turns_table.put_item(
             Item={
@@ -34,8 +31,7 @@ def post_turn(conversation_id: str):
             ExpressionAttributeNames={"#o": "order"},
         )
     except db.turns_table.meta.client.exceptions.ConditionalCheckFailedException:
-        # Already saved — idempotent success
-        pass
+        pass  # already saved — idempotent
 
     saved_turn = Turn(
         conversation_id=conversation_id,
@@ -45,39 +41,40 @@ def post_turn(conversation_id: str):
         created_at=now,
     )
 
-    if body.speaker != "user":
-        response = TurnResponse(turn=saved_turn)
-        return response.model_dump(by_alias=True)
+    # Only visitor turns trigger consultant replies
+    if body.speaker != "visitor":
+        return TurnResponse(turn=saved_turn).model_dump(by_alias=True)
 
-    # Fetch conversation history for Bedrock context
+    # Fetch full conversation history for Bedrock context
     history_resp = db.turns_table.query(
         KeyConditionExpression=Key("conversation_id").eq(conversation_id),
     )
-    history_items = sorted(history_resp.get("Items", []), key=lambda x: x["order"])
+    history = sorted(history_resp.get("Items", []), key=lambda x: x["order"])
 
-    messages = []
-    for item in history_items:
-        role = "user" if item["speaker"] == "user" else "assistant"
-        messages.append({"role": role, "content": item["text"]})
+    # Generate both consultant replies in one Bedrock call
+    replies = generate_consultant_replies(history)
 
-    ai_text = generate_reply(messages)
-    ai_order = body.order + 1
     ai_now = datetime.now(timezone.utc).isoformat()
+    consultant_replies = []
 
-    db.turns_table.put_item(
-        Item={
-            "conversation_id": conversation_id,
-            "order": ai_order,
-            "text": ai_text,
-            "speaker": "ai",
-            "created_at": ai_now,
-        },
-        ConditionExpression="attribute_not_exists(conversation_id) AND attribute_not_exists(#o)",
-        ExpressionAttributeNames={"#o": "order"},
-    )
+    for idx, (speaker_key, text) in enumerate(
+        [("consultant1", replies["consultant1"]), ("consultant2", replies["consultant2"])]
+    ):
+        reply_order = body.order + idx + 1
+        try:
+            db.turns_table.put_item(
+                Item={
+                    "conversation_id": conversation_id,
+                    "order": reply_order,
+                    "text": text,
+                    "speaker": speaker_key,
+                    "created_at": ai_now,
+                },
+                ConditionExpression="attribute_not_exists(conversation_id) AND attribute_not_exists(#o)",
+                ExpressionAttributeNames={"#o": "order"},
+            )
+        except db.turns_table.meta.client.exceptions.ConditionalCheckFailedException:
+            pass
+        consultant_replies.append(ConsultantReply(order=reply_order, text=text, speaker=speaker_key))
 
-    response = TurnResponse(
-        turn=saved_turn,
-        ai_reply=AiReply(order=ai_order, text=ai_text),
-    )
-    return response.model_dump(by_alias=True)
+    return TurnResponse(turn=saved_turn, consultant_replies=consultant_replies).model_dump(by_alias=True)

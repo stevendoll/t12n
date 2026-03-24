@@ -133,12 +133,11 @@ nav ul a:hover { color: var(--accent); }
   background: transparent;
   border: none;
   outline: none;
-  font-family: 'Instrument Serif', serif;
-  font-size: clamp(1.4rem, 3.5vw, 2.8rem);
-  font-style: italic;
+  font-family: 'Special Elite', 'Courier New', monospace;
+  font-size: clamp(1.1rem, 2.6vw, 1.9rem);
   font-weight: 400;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
   color: var(--accent);
   padding: 20px 28px;
   min-height: 100px;
@@ -434,48 +433,64 @@ footer a {
 .chat-area {
   width: 100%;
   max-width: 680px;
-  /* Grows with content; once it hits ~40vh the oldest bubbles scroll off the top */
-  max-height: 40vh;
-  overflow-y: auto;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;   /* new bubbles anchor to the bottom */
   gap: 10px;
   padding: 4px 0 16px;
-  scrollbar-width: none;
-  /* Smooth height expansion as bubbles arrive */
-  transition: max-height 0.4s ease;
 }
-
-.chat-area::-webkit-scrollbar { display: none; }
 
 .chat-bubble {
   max-width: 74%;
-  padding: 14px 18px;
+  padding: 12px 16px 14px;
   border-radius: 18px;
-  font-size: 0.82rem;
-  line-height: 1.65;
-  letter-spacing: 0.01em;
+  font-family: 'Special Elite', 'Courier New', monospace;
+  font-size: 1rem;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
   animation: bubble-in 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
-/* User — left-aligned, teal-tinted */
-.chat-bubble--user {
+.chat-bubble p { margin: 0; }
+
+.chat-bubble-label {
+  display: block;
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  opacity: 0.55;
+}
+
+/* Visitor (You) — left-aligned, teal */
+.chat-bubble--visitor {
   align-self: flex-start;
   background: rgba(77, 182, 172, 0.14);
   border: 1px solid rgba(77, 182, 172, 0.32);
   color: var(--white);
   border-bottom-left-radius: 4px;
 }
+.chat-bubble--visitor .chat-bubble-label { color: var(--accent); opacity: 1; }
 
-/* Assistant — right-aligned, cream-tinted */
-.chat-bubble--assistant {
+/* Alex — right-aligned, warm amber */
+.chat-bubble--alex {
   align-self: flex-end;
-  background: rgba(245, 240, 232, 0.07);
-  border: 1px solid rgba(245, 240, 232, 0.14);
-  color: rgba(245, 240, 232, 0.85);
+  background: rgba(210, 160, 80, 0.10);
+  border: 1px solid rgba(210, 160, 80, 0.25);
+  color: rgba(245, 240, 232, 0.88);
   border-bottom-right-radius: 4px;
 }
+.chat-bubble--alex .chat-bubble-label { color: #d2a050; opacity: 1; }
+
+/* Jamie — right-aligned, slate purple */
+.chat-bubble--jamie {
+  align-self: flex-end;
+  background: rgba(140, 120, 180, 0.10);
+  border: 1px solid rgba(140, 120, 180, 0.25);
+  color: rgba(245, 240, 232, 0.88);
+  border-bottom-right-radius: 4px;
+}
+.chat-bubble--jamie .chat-bubble-label { color: #9b85c8; opacity: 1; }
 
 /* ─── Animations ────────────────────────────────────────────── */
 @keyframes fadeUp {
