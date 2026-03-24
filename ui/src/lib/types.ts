@@ -3,26 +3,36 @@ export interface IcebreakerResponse {
   text: string
 }
 
+export type Speaker = 'visitor' | 'consultant1' | 'consultant2'
+
 export interface TurnRequest {
   order: number
   text: string
-  speaker: 'ai' | 'user'
+  speaker: Speaker
 }
 
 export interface Turn {
   conversationId: string
   order: number
   text: string
-  speaker: 'ai' | 'user'
+  speaker: Speaker
   createdAt: string
 }
 
-export interface AiReply {
+export interface ConsultantReply {
   order: number
   text: string
+  speaker: 'consultant1' | 'consultant2'
 }
 
 export interface TurnResponse {
   turn: Turn
-  aiReply?: AiReply
+  consultantReplies?: ConsultantReply[]
+}
+
+// UI-only chat message
+export interface ChatMessage {
+  id: string
+  speaker: Speaker
+  text: string
 }

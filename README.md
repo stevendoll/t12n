@@ -46,10 +46,28 @@ Browser
   └── t12n.ai (CloudFront → S3, React SPA)
         └── api.t12n.ai (API Gateway → Lambda)
               ├── GET  /conversations/icebreakers     → random icebreaker from DynamoDB
-              └── POST /conversations/{id}/turns      → save turn; if speaker=user, call Bedrock
+              └── POST /conversations/{id}/turns      → save turn, call Bedrock for consultant replies
 ```
 
 Cartesia TTS runs entirely in the browser via WebSocket — no Lambda proxy.
+
+## Conversation engine
+
+The site runs a three-speaker conversation between the visitor and two AI consultants:
+
+- **Visitor** — types or speaks their message; played back via Cartesia TTS before submission
+- **Alex** (`consultant1`) — warm transformation expert; reflects, asks sharp questions
+- **Jamie** (`consultant2`) — wildly funny devil's advocate; absurd analogies, dinner-party wit
+
+Each visitor turn is saved to DynamoDB, then the full conversation history is sent to **Claude 3.5 Haiku** (via Bedrock cross-region inference) with a system prompt enforcing 15–25 word replies per consultant. Both replies are returned to the UI, displayed as chat bubbles, and spoken sequentially via Cartesia TTS.
+
+### Speakers & voices
+
+| Speaker | Persona | Cartesia voice |
+|---------|---------|----------------|
+| Visitor | Site visitor | Configured via `VITE_CARTESIA_VOICE_ID` |
+| Alex (`consultant1`) | Warm transformation expert | Tessa — Kind Companion |
+| Jamie (`consultant2`) | Whimsical devil's advocate | Clint — Rugged Actor |
 
 ## GitHub secrets required
 
