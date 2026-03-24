@@ -415,7 +415,69 @@ footer a {
   text-decoration: none;
 }
 
-/* Animations */
+/* ─── Chat bubbles ─────────────────────────────────────────── */
+
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.88);
+  }
+  65% {
+    transform: translateY(-4px) scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.chat-area {
+  width: 100%;
+  max-width: 680px;
+  /* Grows with content; once it hits ~40vh the oldest bubbles scroll off the top */
+  max-height: 40vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;   /* new bubbles anchor to the bottom */
+  gap: 10px;
+  padding: 4px 0 16px;
+  scrollbar-width: none;
+  /* Smooth height expansion as bubbles arrive */
+  transition: max-height 0.4s ease;
+}
+
+.chat-area::-webkit-scrollbar { display: none; }
+
+.chat-bubble {
+  max-width: 74%;
+  padding: 14px 18px;
+  border-radius: 18px;
+  font-size: 0.82rem;
+  line-height: 1.65;
+  letter-spacing: 0.01em;
+  animation: bubble-in 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* User — left-aligned, teal-tinted */
+.chat-bubble--user {
+  align-self: flex-start;
+  background: rgba(77, 182, 172, 0.14);
+  border: 1px solid rgba(77, 182, 172, 0.32);
+  color: var(--white);
+  border-bottom-left-radius: 4px;
+}
+
+/* Assistant — right-aligned, cream-tinted */
+.chat-bubble--assistant {
+  align-self: flex-end;
+  background: rgba(245, 240, 232, 0.07);
+  border: 1px solid rgba(245, 240, 232, 0.14);
+  color: rgba(245, 240, 232, 0.85);
+  border-bottom-right-radius: 4px;
+}
+
+/* ─── Animations ────────────────────────────────────────────── */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(24px); }
   to   { opacity: 1; transform: translateY(0); }
