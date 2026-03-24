@@ -23,30 +23,28 @@ def test_get_icebreaker():
     return body["text"]
 
 
-def test_post_ai_turn(conversation_id: str, text: str):
+def test_post_visitor_turn(conversation_id: str, text: str, order: int = 0):
     url = f"{BASE_URL}/conversations/{conversation_id}/turns"
-    print(f"POST {url} (ai turn) ...", end=" ")
-    payload = {"order": 0, "text": text, "speaker": "ai"}
-    r = requests.post(url, json=payload, timeout=15)
-    assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
-    body = r.json()
-    assert "turn" in body, f"Missing 'turn' in response: {body}"
-    assert body["turn"]["text"] == text
-    print(f"OK ({r.elapsed.total_seconds():.2f}s)")
-
-
-def test_post_user_turn(conversation_id: str):
-    url = f"{BASE_URL}/conversations/{conversation_id}/turns"
-    print(f"POST {url} (user turn) ...", end=" ")
-    payload = {"order": 1, "text": "We keep running pilots but nothing scales.", "speaker": "user"}
+    print(f"POST {url} (visitor turn, order={order}) ...", end=" ")
+    payload = {"order": order, "text": text, "speaker": "visitor"}
     r = requests.post(url, json=payload, timeout=30)
     assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
     body = r.json()
     assert "turn" in body, f"Missing 'turn' in response: {body}"
-    assert "aiReply" in body, f"Missing 'aiReply' in response: {body}"
-    assert body["aiReply"]["text"], "AI reply text is empty"
+    assert body["turn"]["text"] == text, f"Turn text mismatch: {body}"
+    replies = body.get("consultantReplies", [])
+    assert len(replies) == 2, f"Expected 2 consultantReplies, got {len(replies)}: {body}"
+    speakers = {r["speaker"] for r in replies}
+    assert speakers == {"consultant1", "consultant2"}, f"Unexpected speakers: {speakers}"
+    for reply in replies:
+        assert reply["text"], f"Empty reply text for {reply['speaker']}"
     elapsed = r.elapsed.total_seconds()
-    print(f"OK ({elapsed:.2f}s) — AI: \"{body['aiReply']['text'][:80]}...\"")
+    c1 = next(r["text"] for r in replies if r["speaker"] == "consultant1")
+    c2 = next(r["text"] for r in replies if r["speaker"] == "consultant2")
+    print(f"OK ({elapsed:.2f}s)")
+    print(f"  Alex:  \"{c1[:80]}\"")
+    print(f"  Jamie: \"{c2[:80]}\"")
+    return replies
 
 
 def main():
@@ -62,14 +60,14 @@ def main():
     conv_id = str(uuid.uuid4())
 
     try:
-        test_post_ai_turn(conv_id, icebreaker_text)
+        test_post_visitor_turn(conv_id, icebreaker_text, order=0)
     except Exception as e:
-        errors.append(f"POST /conversations/{{id}}/turns (ai): {e}")
+        errors.append(f"POST /conversations/{{id}}/turns (visitor, order=0): {e}")
 
     try:
-        test_post_user_turn(conv_id)
+        test_post_visitor_turn(conv_id, "We keep running pilots but nothing scales.", order=3)
     except Exception as e:
-        errors.append(f"POST /conversations/{{id}}/turns (user): {e}")
+        errors.append(f"POST /conversations/{{id}}/turns (visitor, order=3): {e}")
 
     print(f"\n{'─' * 60}")
     if errors:
