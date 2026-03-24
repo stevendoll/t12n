@@ -113,6 +113,10 @@ class TestIcebreakers(unittest.TestCase):
             )
 
             with patch("db.icebreakers_table", table):
+                import importlib
+                import api.routers.icebreakers as mod
+                importlib.reload(mod)
+
                 from api.app import handler
                 event = _apigw_event("GET", "/conversations/icebreakers")
                 result = handler(event, MagicMock())
@@ -136,7 +140,7 @@ class TestTurns(unittest.TestCase):
         )
         return turns
 
-    def test_post_ai_turn_saves_without_bedrock(self):
+    def test_post_visitor_turn_saves_and_calls_bedrock(self):
         import boto3
         from moto import mock_aws
 
@@ -145,19 +149,32 @@ class TestTurns(unittest.TestCase):
             turns_table = self._make_tables(ddb)
             conv_id = str(uuid.uuid4())
 
-            with patch("db.turns_table", turns_table):
+            mock_replies = {
+                "consultant1": "That's exactly where most companies get stuck. What does your rollout look like?",
+                "consultant2": "Imagine calling a diet 'eating less pizza' — same energy. What are you actually changing?",
+            }
+
+            with patch("db.turns_table", turns_table), \
+                 patch("bedrock_helpers.generate_consultant_replies", return_value=mock_replies):
+                import importlib
+                import api.routers.turns as turns_mod
+                importlib.reload(turns_mod)
+
                 from api.app import handler
                 event = _apigw_event(
                     "POST",
                     f"/conversations/{conv_id}/turns",
-                    body={"order": 0, "text": "The gap between knowing and doing.", "speaker": "ai"},
+                    body={"order": 0, "text": "The gap between knowing and doing.", "speaker": "visitor"},
                     path_params={"conversation_id": conv_id},
                 )
                 result = handler(event, MagicMock())
                 self.assertEqual(result["statusCode"], 200)
                 body = json.loads(result["body"])
                 self.assertEqual(body["turn"]["text"], "The gap between knowing and doing.")
-                self.assertIsNone(body.get("aiReply"))
+                replies = body.get("consultantReplies", [])
+                self.assertEqual(len(replies), 2)
+                speakers = {r["speaker"] for r in replies}
+                self.assertEqual(speakers, {"consultant1", "consultant2"})
 
     def test_warmup_event_returns_200(self):
         from api.app import handler
