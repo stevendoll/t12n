@@ -1,5 +1,4 @@
 import json
-import re
 import boto3
 from aws_lambda_powertools import Logger
 
@@ -33,7 +32,6 @@ def _build_history(conversation_history: list[dict]) -> list[dict]:
     visitor turns → role: "user"
     consultant turns (both) → role: "assistant", combined as "Alex: ...\nJamie: ..."
     """
-    # Drop any legacy-format items (old speaker values "user"/"ai" from v1 API)
     known = {"visitor", "consultant1", "consultant2"}
     items = [x for x in conversation_history if x.get("speaker") in known]
     items.sort(key=lambda x: x["order"])
@@ -46,30 +44,28 @@ def _build_history(conversation_history: list[dict]) -> list[dict]:
             messages.append({"role": "user", "content": item["text"]})
             i += 1
         else:
-            # Collect consecutive consultant turns into one assistant message
             combined: list[str] = []
             while i < len(items) and items[i]["speaker"] in ("consultant1", "consultant2"):
                 name = "Alex" if items[i]["speaker"] == "consultant1" else "Jamie"
                 combined.append(f'{name}: {items[i]["text"]}')
                 i += 1
-            if combined:  # only append if we actually collected something
+            if combined:
                 messages.append({"role": "assistant", "content": "\n".join(combined)})
 
     # Bedrock requires conversation to start with a user turn
     while messages and messages[0]["role"] != "user":
         messages.pop(0)
 
-    logger.info(f"Bedrock history: {len(messages)} messages, last_role={messages[-1]['role'] if messages else 'none'}")
+    logger.info(f"Bedrock history: {len(messages)} messages")
     return messages
 
 
 def _cap_words(text: str, limit: int = 30) -> str:
-    """Hard-cap a response at `limit` words, ending on the last complete sentence if possible."""
+    """Hard-cap a response at `limit` words, ending on the last sentence boundary if possible."""
     words = text.split()
     if len(words) <= limit:
         return text
     truncated = " ".join(words[:limit])
-    # Try to end at a sentence boundary within the last 10 words
     for punct in (".", "!", "?"):
         idx = truncated.rfind(punct)
         if idx > len(truncated) // 2:
@@ -77,11 +73,8 @@ def _cap_words(text: str, limit: int = 30) -> str:
     return truncated + "."
 
 
-def _invoke_bedrock(messages: list[dict]) -> dict[str, str]:
-    """Single Bedrock call — raises on bad response.
-    Uses assistant prefill of '{' to reliably force JSON output.
-    """
-    # Prefill the assistant turn with '{' so Claude must continue as JSON
+def _invoke_bedrock(messages: list[dict], system: str) -> dict[str, str]:
+    """Single Bedrock call. Uses assistant prefill '{' to force JSON output."""
     messages_with_prefill = messages + [{"role": "assistant", "content": "{"}]
 
     response = _bedrock.invoke_model(
@@ -89,7 +82,7 @@ def _invoke_bedrock(messages: list[dict]) -> dict[str, str]:
         body=json.dumps({
             "anthropic_version": "bedrock-2023-05-31",
             "max_tokens": 1000,
-            "system": SYSTEM_PROMPT,
+            "system": system,
             "messages": messages_with_prefill,
         }),
     )
@@ -97,14 +90,13 @@ def _invoke_bedrock(messages: list[dict]) -> dict[str, str]:
     content = body.get("content", [])
     if not content:
         logger.error(f"Empty Bedrock response: {json.dumps(body)[:500]}")
-        raise ValueError(f"Empty content from Bedrock (stop_reason={body.get('stop_reason')!r})")
-    # Prepend the prefill character so we have the full JSON object
-    raw = "{" + content[0]["text"].strip()
+        raise ValueError(f"Empty content (stop_reason={body.get('stop_reason')!r})")
 
+    raw   = "{" + content[0]["text"].strip()
     start = raw.find("{")
     end   = raw.rfind("}")
     if start == -1 or end == -1 or end <= start:
-        raise ValueError(f"No JSON object in response: {raw[:200]!r}")
+        raise ValueError(f"No JSON in response: {raw[:200]!r}")
 
     parsed = json.loads(raw[start : end + 1])
     c1 = str(parsed.get("consultant1", "")).strip()
@@ -114,20 +106,30 @@ def _invoke_bedrock(messages: list[dict]) -> dict[str, str]:
     return {"consultant1": _cap_words(c1), "consultant2": _cap_words(c2)}
 
 
-def generate_consultant_replies(conversation_history: list[dict]) -> dict[str, str]:
+def generate_consultant_replies(
+    conversation_history: list[dict],
+    nudge: str | None = None,
+) -> dict[str, str]:
     """
-    Given conversation history (list of {speaker, text, order} dicts),
-    call Bedrock and return {"consultant1": "...", "consultant2": "..."}.
-    Retries up to 2 times on parse errors before raising.
+    Call Bedrock and return {"consultant1": "...", "consultant2": "..."}.
+    nudge: optional topic/idea to weave in organically.
+    Retries up to 2 times on parse errors.
     """
     messages = _build_history(conversation_history)
-    last_err: Exception = RuntimeError("Unknown error")
+    system   = SYSTEM_PROMPT
 
+    if nudge:
+        system += (
+            '\n\nNUDGE: Organically weave in the following topic — don\'t announce it, '
+            f'let it surface naturally in one of the replies: "{nudge}"'
+        )
+
+    last_err: Exception = RuntimeError("Unknown error")
     for attempt in range(3):
         try:
-            return _invoke_bedrock(messages)
+            return _invoke_bedrock(messages, system)
         except (ValueError, KeyError, json.JSONDecodeError) as e:
-            logger.warning(f"Bedrock parse attempt {attempt + 1} failed: {e}")
+            logger.warning(f"Bedrock attempt {attempt + 1} failed: {e}")
             last_err = e
 
     raise last_err

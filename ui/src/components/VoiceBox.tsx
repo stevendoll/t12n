@@ -9,14 +9,24 @@ import ChatBubble from './ChatBubble'
 const CARTESIA_API_KEY = import.meta.env.VITE_CARTESIA_API_KEY as string
 const SAMPLE_RATE = 44100
 
-const VOICE_IDS: Record<Speaker, string> = {
-  visitor:     import.meta.env.VITE_CARTESIA_VOICE_ID as string,
-  consultant1: '6ccbfb76-1fc6-48f7-b71d-91ac6298247b', // Tessa — Kind Companion
-  consultant2: 'db69127a-dbaf-4fa9-b425-2fe67680c348', // Clint — Rugged Actor
+// ── Voice assignment ──────────────────────────────────────────────────────────
+// VITE_CARTESIA_VOICES: comma-separated list of voice IDs to pick from randomly.
+// Falls back to legacy single-voice env vars when the list is absent or too short.
+
+const FALLBACK_VOICES: Record<Speaker, string> = {
+  visitor:     import.meta.env.VITE_CARTESIA_VOICE_ID as string ?? '',
+  consultant1: '6ccbfb76-1fc6-48f7-b71d-91ac6298247b', // Tessa
+  consultant2: 'db69127a-dbaf-4fa9-b425-2fe67680c348', // Clint
 }
 
-// Strip Cartesia emotion/expression tags before sending to TTS —
-// Cartesia's WebSocket API doesn't interpret them in this format
+function assignVoices(): Record<Speaker, string> {
+  const pool = (import.meta.env.VITE_CARTESIA_VOICES as string ?? '')
+    .split(',').map(v => v.trim()).filter(Boolean)
+  if (pool.length < 3) return FALLBACK_VOICES
+  const shuffled = [...pool].sort(() => Math.random() - 0.5)
+  return { visitor: shuffled[0], consultant1: shuffled[1], consultant2: shuffled[2] }
+}
+
 function stripSsml(text: string): string {
   return text
     .replace(/<emotion[^>]*\/?>/gi, '')
@@ -42,6 +52,15 @@ export default function VoiceBox() {
     return id
   })
 
+  // Randomly assigned once per session, persisted across page reloads
+  const [voiceIds] = useState<Record<Speaker, string>>(() => {
+    const stored = sessionStorage.getItem('t12n_voices')
+    if (stored) { try { return JSON.parse(stored) as Record<Speaker, string> } catch { /* fall through */ } }
+    const voices = assignVoices()
+    sessionStorage.setItem('t12n_voices', JSON.stringify(voices))
+    return voices
+  })
+
   const orderRef = useRef(0)
 
   type ConvState = 'idle' | 'visitor-speaking' | 'loading' | 'consultant-speaking' | 'waiting'
@@ -56,8 +75,8 @@ export default function VoiceBox() {
   const audioCtxRef    = useRef<AudioContext | null>(null)
   const analyserRef    = useRef<AnalyserNode | null>(null)
   const vizRef         = useRef<VisualizerHandle>(null)
-  const messagesEndRef  = useRef<HTMLDivElement>(null)
-  const voiceboxBoxRef  = useRef<HTMLDivElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const voiceboxBoxRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     getIcebreaker()
@@ -68,7 +87,6 @@ export default function VoiceBox() {
       })
   }, [])
 
-  // After each new bubble, scroll the page so the text box stays visible at bottom
   useEffect(() => {
     if (messages.length === 0) return
     requestAnimationFrame(() => {
@@ -97,24 +115,19 @@ export default function VoiceBox() {
     } catch { /* ignore */ }
   }, [])
 
-  const speakAs = useCallback((speaker: Speaker, text: string): Promise<void> => {
+  const speakAs = useCallback((speaker: Speaker, text: string, overrideVoiceId?: string): Promise<void> => {
     return new Promise((resolve, reject) => {
-      const voiceId = VOICE_IDS[speaker]
-      const clean   = stripSsml(text)  // strip emotion tags — not supported in WS format
+      const voiceId = overrideVoiceId ?? voiceIds[speaker]
+      const clean   = stripSsml(text)
 
       if (!CARTESIA_API_KEY || !voiceId) {
-        setTtsState('playing')
-        setStatus('▶ Playing...')
-        setStatusType('playing')
+        setTtsState('playing'); setStatus('▶ Playing...'); setStatusType('playing')
         const ms = Math.max(800, clean.length * 45)
         setTimeout(() => { setTtsState('idle'); setStatus(''); setStatusType(''); resolve() }, ms)
         return
       }
 
-      setTtsState('connecting')
-      setStatus('Connecting...')
-      setStatusType('')
-      setLatencyMs(null)
+      setTtsState('connecting'); setStatus('Connecting...'); setStatusType(''); setLatencyMs(null)
       const startMark = performance.now()
 
       try {
@@ -130,64 +143,42 @@ export default function VoiceBox() {
         const ws = new WebSocket(wsUrl)
         ws.binaryType = 'arraybuffer'
 
-        let nextPlayTime = 0
-        let firstChunk   = true
-        let settled      = false
+        let nextPlayTime = 0, firstChunk = true, settled = false
 
         const finish = () => {
-          if (settled) return
-          settled = true
-          ws.close()
-          vizRef.current?.stop()
-          setTtsState('idle')
-          setStatus('')
-          setStatusType('')
-          resolve()
+          if (settled) return; settled = true
+          ws.close(); vizRef.current?.stop()
+          setTtsState('idle'); setStatus(''); setStatusType(''); resolve()
         }
-
         const fail = (msg: string) => {
-          if (settled) return
-          settled = true
-          ws.close()
-          vizRef.current?.stop()
-          setTtsState('idle')
-          setStatus(msg)
-          setStatusType('error')
-          reject(new Error(msg))
+          if (settled) return; settled = true
+          ws.close(); vizRef.current?.stop()
+          setTtsState('idle'); setStatus(msg); setStatusType('error'); reject(new Error(msg))
         }
-
         const scheduleChunk = (pcm: Float32Array) => {
           if (firstChunk) {
             setLatencyMs(Math.round(performance.now() - startMark))
-            firstChunk   = false
-            nextPlayTime = audioCtx.currentTime + 0.02
-            setTtsState('playing')
-            setStatus('▶ Playing...')
-            setStatusType('playing')
+            firstChunk = false; nextPlayTime = audioCtx.currentTime + 0.02
+            setTtsState('playing'); setStatus('▶ Playing...'); setStatusType('playing')
             vizRef.current?.start(analyserRef.current!)
           }
           const buf = audioCtx.createBuffer(1, pcm.length, SAMPLE_RATE)
           buf.copyToChannel(pcm, 0)
           const src = audioCtx.createBufferSource()
-          src.buffer = buf
-          src.connect(analyserRef.current!)
-          src.start(nextPlayTime)
+          src.buffer = buf; src.connect(analyserRef.current!); src.start(nextPlayTime)
           nextPlayTime += buf.duration
         }
 
         ws.onopen = () => {
           setStatus('Synthesizing...')
           const payload: Record<string, unknown> = {
-            context_id:    crypto.randomUUID(),
-            model_id:      'sonic-english',
-            transcript:    clean,
-            voice:         { mode: 'id', id: voiceId },
+            context_id: crypto.randomUUID(), model_id: 'sonic-english', transcript: clean,
+            voice: { mode: 'id', id: voiceId },
             output_format: { container: 'raw', encoding: 'pcm_f32le', sample_rate: SAMPLE_RATE },
           }
           payload['continue'] = false
           ws.send(JSON.stringify(payload))
         }
-
         ws.onmessage = (e) => {
           if (e.data instanceof ArrayBuffer) {
             scheduleChunk(new Float32Array(e.data))
@@ -195,38 +186,27 @@ export default function VoiceBox() {
             try {
               const msg = JSON.parse(e.data as string) as { type?: string; data?: string }
               if (msg.type === 'error' || msg.type === 'done') {
-                if (firstChunk) {
-                  const errText = (msg as Record<string, unknown>).error as string | undefined
-                  fail(`TTS error: ${errText ?? JSON.stringify(msg)}`)
-                } else {
-                  const remaining = Math.max(50, (nextPlayTime - audioCtx.currentTime) * 1000 + 150)
-                  setTimeout(finish, remaining)
-                }
+                if (firstChunk) fail(`TTS error: ${(msg as Record<string,unknown>).error ?? JSON.stringify(msg)}`)
+                else { const rem = Math.max(50, (nextPlayTime - audioCtx.currentTime) * 1000 + 150); setTimeout(finish, rem) }
                 return
               }
               if (msg.data) {
-                const bin   = atob(msg.data)
-                const bytes = new Uint8Array(bin.length)
+                const bin = atob(msg.data); const bytes = new Uint8Array(bin.length)
                 for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
                 scheduleChunk(new Float32Array(bytes.buffer))
               }
             } catch (err) { console.error('WS msg error:', err) }
           }
         }
-
         ws.onerror = () => fail('Connection failed')
-
         ws.onclose = () => {
           if (firstChunk) { fail('No audio received'); return }
-          const remaining = Math.max(50, (nextPlayTime - audioCtx.currentTime) * 1000 + 150)
-          setTimeout(finish, remaining)
+          const rem = Math.max(50, (nextPlayTime - audioCtx.currentTime) * 1000 + 150)
+          setTimeout(finish, rem)
         }
-      } catch (err) {
-        setTtsState('idle')
-        reject(err)
-      }
+      } catch (err) { setTtsState('idle'); reject(err) }
     })
-  }, [])
+  }, [voiceIds])
 
   const addBubble = useCallback((speaker: Speaker, text: string) => {
     setMessages(prev => [...prev, { id: crypto.randomUUID(), speaker, text }])
@@ -234,7 +214,6 @@ export default function VoiceBox() {
 
   const handleSubmit = useCallback(async (text: string) => {
     if (!text.trim()) return
-
     const visitorOrder = orderRef.current
 
     try {
@@ -250,34 +229,25 @@ export default function VoiceBox() {
       setStatusType('')
 
       const [response] = await Promise.all([
-        postTurn(conversationId, { order: visitorOrder, text, speaker: 'visitor' }),
+        postTurn(conversationId, { order: visitorOrder, text, speaker: 'visitor', voices: voiceIds }),
         pause(2000),
       ])
 
-      orderRef.current = visitorOrder + 3
+      const replies = response.consultantReplies ?? []
+      orderRef.current = visitorOrder + 1 + replies.length
+
       setStatus('')
       setConvState('consultant-speaking')
 
-      const replies = response.consultantReplies ?? []
-
-      const alexReply  = replies.find(r => r.speaker === 'consultant1')
-      const jamieReply = replies.find(r => r.speaker === 'consultant2')
-
-      if (alexReply) {
+      for (let i = 0; i < replies.length; i++) {
+        const reply = replies[i]
+        if (i > 0) await pause(2000)
         playPopSound()
-        addBubble('consultant1', alexReply.text)
-        await speakAs('consultant1', alexReply.text)
-      }
-
-      if (jamieReply) {
-        await pause(2000)
-        playPopSound()
-        addBubble('consultant2', jamieReply.text)
-        await speakAs('consultant2', jamieReply.text)
+        addBubble(reply.speaker, reply.text)
+        await speakAs(reply.speaker, reply.text, reply.voiceId)
       }
 
       setConvState('waiting')
-      // Blink cursor in text box as affordance to reply
       requestAnimationFrame(() => inputRef.current?.focus())
 
     } catch (err) {
@@ -285,7 +255,7 @@ export default function VoiceBox() {
       setStatusType('error')
       setConvState('waiting')
     }
-  }, [conversationId, speakAs, playPopSound, addBubble])
+  }, [conversationId, voiceIds, speakAs, playPopSound, addBubble])
 
   const handlePlay = useCallback(() => {
     const text = getInputText()
@@ -331,11 +301,7 @@ export default function VoiceBox() {
               onError={msg => { setStatus(msg); setStatusType('error') }}
               disabled={isBusy}
             />
-            <SpeakButton
-              state={ttsState}
-              onClick={handlePlay}
-              disabled={isBusy}
-            />
+            <SpeakButton state={ttsState} onClick={handlePlay} disabled={isBusy} />
           </div>
         </div>
       </div>
@@ -343,14 +309,11 @@ export default function VoiceBox() {
       <Visualizer ref={vizRef} />
 
       {status && (
-        <div
-          className="voicebox-status"
-          style={{
-            color: statusType === 'error'   ? '#ff6b6b'
-                 : statusType === 'playing' ? 'var(--accent)'
-                 : 'rgba(245,240,232,0.4)',
-          }}
-        >
+        <div className="voicebox-status" style={{
+          color: statusType === 'error'   ? '#ff6b6b'
+               : statusType === 'playing' ? 'var(--accent)'
+               : 'rgba(245,240,232,0.4)',
+        }}>
           {status}
         </div>
       )}
