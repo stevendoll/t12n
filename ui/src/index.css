@@ -511,3 +511,103 @@ footer a {
   70%  { transform: scale(1);    box-shadow: 0 0 0 0 rgba(255,255,51,0); }
   100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(255,255,51,0); }
 }
+
+/* ─── Responsive ────────────────────────────────────────────── */
+
+/* Very small screens: hide nav links (footer has contact link) */
+@media (max-width: 400px) {
+  nav ul { display: none; }
+}
+
+/* Touch devices: restore default cursor, hide custom cursor */
+@media (hover: none) and (pointer: coarse) {
+  body { cursor: auto; }
+  .mic-btn, .play-btn { cursor: pointer; }
+}
+
+/* Tablet — ≤ 900px */
+@media (max-width: 900px) {
+  nav { padding: 0 24px; }
+
+  #hero { padding: 100px 24px 60px; }
+
+  #about   { padding: 80px 24px; }
+  #services { padding: 80px 24px; }
+
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+
+  .services-grid { grid-template-columns: repeat(2, 1fr); }
+
+  footer { padding: 32px 24px; }
+}
+
+/* Mobile — ≤ 600px */
+@media (max-width: 600px) {
+  nav {
+    padding: 0 16px;
+    height: 60px;
+  }
+
+  nav ul { gap: 20px; }
+
+  nav ul a { font-size: 0.65rem; }
+
+  #hero {
+    padding: 80px 16px 48px;
+  }
+
+  #hero img {
+    width: 110px;
+    height: 110px;
+    margin-bottom: 14px;
+  }
+
+  #hero .label { font-size: 0.75rem; margin-bottom: 20px; }
+
+  .voicebox-input {
+    padding: 14px 16px;
+    min-height: 80px;
+  }
+
+  .voicebox-toolbar {
+    padding: 8px 12px 8px 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .voicebox-hint { display: none; }
+
+  .voicebox-toolbar-right { margin-left: auto; }
+
+  .chat-area { max-width: 100%; padding: 4px 0 12px; }
+
+  .chat-bubble {
+    max-width: 88%;
+    font-size: 0.92rem;
+    padding: 10px 14px 12px;
+  }
+
+  #about   { padding: 60px 16px; }
+  #services { padding: 60px 16px; }
+
+  #about h2 { margin-bottom: 32px; }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stat-cell { padding: 20px 16px; }
+
+  .stat-num { font-size: 2.2rem; }
+
+  .services-grid { grid-template-columns: 1fr; }
+
+  .service-card { padding: 28px 24px; }
+
+  footer {
+    padding: 28px 16px;
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+}
