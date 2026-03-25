@@ -257,17 +257,17 @@ export default function VoiceBox() {
     }
   }, [conversationId, voiceIds, speakAs, playPopSound, addBubble])
 
+  const isBusy = convState !== 'idle' && convState !== 'waiting'
+
   const handlePlay = useCallback(() => {
-    if (isBusy) return
+    if (convState !== 'idle' && convState !== 'waiting') return
     const text = getInputText()
     if (text) void handleSubmit(text)
-  }, [handleSubmit, isBusy])
+  }, [handleSubmit, convState])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handlePlay() }
   }
-
-  const isBusy = convState !== 'idle' && convState !== 'waiting'
 
   return (
     <div className="voicebox">
