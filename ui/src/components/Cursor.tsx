@@ -1,10 +1,16 @@
 import { useEffect, useRef } from 'react'
 
+// Only show custom cursor on pointer/mouse devices
+const isTouch = typeof window !== 'undefined' &&
+  window.matchMedia('(hover: none) and (pointer: coarse)').matches
+
 export default function Cursor() {
   const dotRef = useRef<HTMLDivElement>(null)
   const ringRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    if (isTouch) return
+
     let mx = 0, my = 0, rx = 0, ry = 0
     const rafId = { current: 0 }
 
@@ -35,6 +41,8 @@ export default function Cursor() {
       cancelAnimationFrame(rafId.current)
     }
   }, [])
+
+  if (isTouch) return null
 
   return (
     <>
