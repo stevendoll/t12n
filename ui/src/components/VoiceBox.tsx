@@ -258,9 +258,10 @@ export default function VoiceBox() {
   }, [conversationId, voiceIds, speakAs, playPopSound, addBubble])
 
   const handlePlay = useCallback(() => {
+    if (isBusy) return
     const text = getInputText()
     if (text) void handleSubmit(text)
-  }, [handleSubmit])
+  }, [handleSubmit, isBusy])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handlePlay() }

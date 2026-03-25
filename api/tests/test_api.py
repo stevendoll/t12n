@@ -14,11 +14,14 @@ from unittest.mock import MagicMock, patch
 # Ensure src/ is on the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-os.environ.setdefault("ICEBREAKERS_TABLE", "icebreakers")
-os.environ.setdefault("TURNS_TABLE", "conversation_turns")
-os.environ.setdefault("AWS_DEFAULT_REGION", "us-east-1")
-os.environ.setdefault("POWERTOOLS_SERVICE_NAME", "t12n-api")
-os.environ.setdefault("POWERTOOLS_METRICS_NAMESPACE", "T12nApi")
+os.environ.setdefault("ICEBREAKERS_TABLE",    "icebreakers")
+os.environ.setdefault("TURNS_TABLE",          "conversation_turns")
+os.environ.setdefault("CONVERSATIONS_TABLE",  "conversations")
+os.environ.setdefault("CONTACTS_TABLE",       "contacts")
+os.environ.setdefault("IDEAS_TABLE",          "conversation_ideas")
+os.environ.setdefault("AWS_DEFAULT_REGION",   "us-east-1")
+os.environ.setdefault("POWERTOOLS_SERVICE_NAME",        "t12n-api")
+os.environ.setdefault("POWERTOOLS_METRICS_NAMESPACE",   "T12nApi")
 
 
 def _apigw_event(method: str, path: str, body: dict | None = None, path_params: dict | None = None) -> dict:
@@ -138,7 +141,19 @@ class TestTurns(unittest.TestCase):
             ],
             BillingMode="PAY_PER_REQUEST",
         )
-        return turns
+        conversations = ddb.create_table(
+            TableName="conversations",
+            AttributeDefinitions=[{"AttributeName": "conversation_id", "AttributeType": "S"}],
+            KeySchema=[{"AttributeName": "conversation_id", "KeyType": "HASH"}],
+            BillingMode="PAY_PER_REQUEST",
+        )
+        ideas = ddb.create_table(
+            TableName="conversation_ideas",
+            AttributeDefinitions=[{"AttributeName": "idea_id", "AttributeType": "S"}],
+            KeySchema=[{"AttributeName": "idea_id", "KeyType": "HASH"}],
+            BillingMode="PAY_PER_REQUEST",
+        )
+        return turns, conversations, ideas
 
     def test_post_visitor_turn_saves_and_calls_bedrock(self):
         import boto3
@@ -146,7 +161,7 @@ class TestTurns(unittest.TestCase):
 
         with mock_aws():
             ddb = boto3.resource("dynamodb", region_name="us-east-1")
-            turns_table = self._make_tables(ddb)
+            turns_table, conversations_table, ideas_table = self._make_tables(ddb)
             conv_id = str(uuid.uuid4())
 
             mock_replies = {
@@ -155,6 +170,8 @@ class TestTurns(unittest.TestCase):
             }
 
             with patch("db.turns_table", turns_table), \
+                 patch("db.conversations_table", conversations_table), \
+                 patch("db.ideas_table", ideas_table), \
                  patch("bedrock_helpers.generate_consultant_replies", return_value=mock_replies):
                 import importlib
                 import api.routers.turns as turns_mod
