@@ -1,6 +1,7 @@
 import Nav from '../components/Nav'
 import Footer from '../components/Footer'
 import VoiceBox from '../components/VoiceBox'
+import ContactForm from '../components/ContactForm'
 
 export default function Home() {
   return (
@@ -70,6 +71,17 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+
+      <section id="contact">
+        <div className="section-label">Contact</div>
+        <h2 className="contact-heading">
+          Let's talk about<br />
+          <em>what's actually blocking you.</em>
+        </h2>
+        <ContactForm />
+      </section>
+
 
       <Footer />
     </>

@@ -1,4 +1,4 @@
-.PHONY: help local-db-start local-db-stop local-db-seed local-db-reset local-api-start test sam-build deploy-api logs-api smoke-test
+.PHONY: help local-db-start local-db-stop local-db-seed local-db-reset local-api-start test sam-build deploy-api logs-api smoke-test seed-ideas
 
 help:  ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -37,3 +37,6 @@ logs-api:  ## Tail CloudWatch logs for T12nApiFunction
 
 smoke-test:  ## Hit key endpoints and verify responses
 	pipenv run python ../scripts/smoke_test.py
+
+seed-ideas:  ## Seed conversation_ideas table (production)
+	pipenv run python scripts/seed_ideas.py

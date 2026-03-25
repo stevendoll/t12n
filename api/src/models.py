@@ -29,6 +29,7 @@ class TurnRequest(T12nModel):
     order: int = Field(ge=0)
     text: str = Field(min_length=1, max_length=2000)
     speaker: Speaker
+    voices: dict[str, str] | None = None  # {speaker: cartesia_voice_id}
 
 
 class Turn(T12nModel):
@@ -36,6 +37,8 @@ class Turn(T12nModel):
     order: int
     text: str
     speaker: Speaker
+    voice_id: str | None = None
+    idea_id: str | None = None
     created_at: str
 
 
@@ -43,8 +46,33 @@ class ConsultantReply(T12nModel):
     order: int
     text: str
     speaker: Literal["consultant1", "consultant2"]
+    voice_id: str | None = None
 
 
 class TurnResponse(T12nModel):
     turn: Turn
     consultant_replies: list[ConsultantReply] | None = None
+
+
+class Conversation(T12nModel):
+    conversation_id: str
+    created_at: str
+    preview: str
+    voices: dict[str, str] | None = None
+    used_ideas: list[str] = Field(default_factory=list)
+
+
+class ContactRequest(T12nModel):
+    name: str = Field(min_length=1, max_length=100)
+    email: str = Field(min_length=5, max_length=200)
+    message: str = Field(min_length=1, max_length=2000)
+
+
+class Idea(T12nModel):
+    idea_id: str
+    text: str
+    description: str
+    is_active: bool = True
+    insertion_type: str                  # "fixed" | "random"
+    fixed_turn: int | None = None        # visitor turn number that triggers it (fixed only)
+    is_once_only: bool = False           # if True, fires at most once per conversation

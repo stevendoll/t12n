@@ -26,6 +26,9 @@ Globals:
       Variables:
         ICEBREAKERS_TABLE: !Ref IcebreakersTable
         TURNS_TABLE: !Ref ConversationTurnsTable
+        CONVERSATIONS_TABLE: !Ref ConversationsTable
+        CONTACTS_TABLE: !Ref ContactsTable
+        IDEAS_TABLE: !Ref ConversationIdeasTable
         POWERTOOLS_SERVICE_NAME: t12n-api
         LOG_LEVEL: INFO
 
@@ -80,6 +83,54 @@ Resources:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: false
 
+  ConversationsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: conversations
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: conversation_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: conversation_id
+          KeyType: HASH
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: false
+
+  ContactsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: contacts
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: contact_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: contact_id
+          KeyType: HASH
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: false
+
+  ConversationIdeasTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: conversation_ideas
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: idea_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: idea_id
+          KeyType: HASH
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: false
+
   # ── Lambda Function ──────────────────────────────────────────────────────────
 
   T12nApiFunction:
@@ -94,6 +145,12 @@ Resources:
             TableName: !Ref IcebreakersTable
         - DynamoDBCrudPolicy:
             TableName: !Ref ConversationTurnsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ConversationsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ContactsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ConversationIdeasTable
         - Statement:
             - Effect: Allow
               Action:
