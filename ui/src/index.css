@@ -7,7 +7,9 @@
   --color-accent: #4db6ac;
   --color-accent-bright: #66d4c8;
   --color-muted: #4a4a4a;
+  --font-family-sans: 'Inter', sans-serif;
   --font-family-serif: 'Instrument Serif', serif;
+  --font-family-chat: 'Newsreader', serif;
   --font-family-mono: 'DM Mono', monospace;
 }
 
@@ -35,7 +37,7 @@ body {
   background-size: 80px 80px;
   background-attachment: fixed;
   color: var(--white);
-  font-family: 'DM Mono', monospace;
+  font-family: 'Inter', sans-serif;
   font-weight: 300;
   min-height: 100vh;
   overflow-x: hidden;
@@ -133,7 +135,7 @@ nav ul a:hover { color: var(--accent); }
   background: transparent;
   border: none;
   outline: none;
-  font-family: 'Special Elite', 'Courier New', monospace;
+  font-family: 'Newsreader', serif;
   font-size: clamp(1.1rem, 2.6vw, 1.9rem);
   font-weight: 400;
   line-height: 1.3;
@@ -462,7 +464,7 @@ footer a {
   max-width: 74%;
   padding: 12px 16px 14px;
   border-radius: 18px;
-  font-family: 'Special Elite', 'Courier New', monospace;
+  font-family: 'Newsreader', serif;
   font-size: 1rem;
   line-height: 1.6;
   letter-spacing: 0.02em;
@@ -791,7 +793,7 @@ footer a {
   border-radius: 14px;
   border: 1px solid var(--border);
   background: rgba(245,240,232,0.02);
-  font-family: 'Special Elite', 'Courier New', monospace;
+  font-family: 'Newsreader', serif;
   font-size: 0.9rem;
   line-height: 1.55;
   transition: background 0.2s, border-color 0.2s;
