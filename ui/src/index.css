@@ -180,22 +180,20 @@ nav ul a:hover { color: var(--accent); }
 }
 
 .voicebox-reset {
-  background: none;
   border: none;
-  padding: 0;
-  cursor: pointer;
-  font-size: 20px;
-  line-height: 1;
-  color: rgba(245,240,232,0.3);
-  transition: color 0.15s ease;
+  border-radius: 4px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  cursor: none;
+  transition: background 0.2s;
+  background: rgba(245,240,232,0.1);
+  color: var(--white);
 }
-.voicebox-reset:hover:not(:disabled) { color: rgba(245,240,232,0.7); }
-.voicebox-reset:disabled { opacity: 0.2; cursor: default; }
+.voicebox-reset:hover:not(:disabled) { background: rgba(245,240,232,0.18); }
+.voicebox-reset:disabled { opacity: 0.25; cursor: default; }
 
 /* Mic button */
 .mic-btn {
