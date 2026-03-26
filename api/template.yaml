@@ -88,7 +88,7 @@ Resources:
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Properties:
-      TableName: conversations
+      TableName: t12n-conversations
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: conversation_id
@@ -104,7 +104,7 @@ Resources:
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Properties:
-      TableName: contacts
+      TableName: t12n-contacts
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: contact_id
@@ -120,7 +120,7 @@ Resources:
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Properties:
-      TableName: conversation_ideas
+      TableName: t12n-conversation-ideas
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: idea_id
@@ -207,8 +207,6 @@ Resources:
 
   WarmupRule:
     Type: AWS::Events::Rule
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
     Properties:
       ScheduleExpression: rate(5 minutes)
       State: ENABLED
