@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { getIcebreaker, postTurn } from '../lib/api'
+import { getIcebreaker, postTurn, postError } from '../lib/api'
 import type { ChatMessage, Speaker } from '../lib/types'
 import MicButton from './MicButton'
 import SpeakButton from './SpeakButton'
@@ -88,12 +88,14 @@ export default function VoiceBox() {
   const [statusType, setStatusType] = useState<'' | 'error' | 'playing'>('')
   const [latencyMs,  setLatencyMs]  = useState<number | null>(null)
 
-  const inputRef       = useRef<HTMLDivElement>(null)
-  const audioCtxRef    = useRef<AudioContext | null>(null)
-  const analyserRef    = useRef<AnalyserNode | null>(null)
-  const vizRef         = useRef<VisualizerHandle>(null)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const voiceboxBoxRef = useRef<HTMLDivElement>(null)
+  const inputRef          = useRef<HTMLDivElement>(null)
+  const audioCtxRef       = useRef<AudioContext | null>(null)
+  const analyserRef       = useRef<AnalyserNode | null>(null)
+  const vizRef            = useRef<VisualizerHandle>(null)
+  const messagesEndRef    = useRef<HTMLDivElement>(null)
+  const voiceboxBoxRef    = useRef<HTMLDivElement>(null)
+  const ttsDisabled       = useRef(false)
+  const ttsErrorReported  = useRef(false)
 
   useEffect(() => {
     getIcebreaker()
@@ -132,15 +134,25 @@ export default function VoiceBox() {
     } catch { /* ignore */ }
   }, [])
 
+  const reportTtsError = useCallback((message: string) => {
+    if (ttsErrorReported.current) return
+    ttsErrorReported.current = true
+    postError('tts_failure', message).catch(() => { /* best-effort */ })
+  }, [])
+
   const speakAs = useCallback((speaker: Speaker, text: string, overrideVoiceId?: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, _reject) => {
       const voiceId = overrideVoiceId ?? voiceIds[speaker]
       const clean   = stripSsml(text)
 
-      if (!CARTESIA_API_KEY || !voiceId) {
+      const silentPlayback = () => {
         setTtsState('playing'); setStatus('▶ Playing...'); setStatusType('playing')
         const ms = Math.max(800, clean.length * 45)
         setTimeout(() => { setTtsState('idle'); setStatus(''); setStatusType(''); resolve() }, ms)
+      }
+
+      if (!CARTESIA_API_KEY || !voiceId || ttsDisabled.current) {
+        silentPlayback()
         return
       }
 
@@ -170,7 +182,10 @@ export default function VoiceBox() {
         const fail = (msg: string) => {
           if (settled) return; settled = true
           ws.close(); vizRef.current?.stop()
-          setTtsState('idle'); setStatus(msg); setStatusType('error'); reject(new Error(msg))
+          ttsDisabled.current = true
+          reportTtsError(msg)
+          setTtsState('idle'); setStatus(''); setStatusType('')
+          resolve()
         }
         const scheduleChunk = (pcm: Float32Array) => {
           if (firstChunk) {
@@ -221,9 +236,14 @@ export default function VoiceBox() {
           const rem = Math.max(50, (nextPlayTime - audioCtx.currentTime) * 1000 + 150)
           setTimeout(finish, rem)
         }
-      } catch (err) { setTtsState('idle'); reject(err) }
+      } catch (err) {
+        ttsDisabled.current = true
+        reportTtsError(err instanceof Error ? err.message : 'AudioContext error')
+        setTtsState('idle'); setStatus(''); setStatusType('')
+        resolve()
+      }
     })
-  }, [voiceIds])
+  }, [voiceIds, reportTtsError])
 
   const addBubble = useCallback((speaker: Speaker, text: string) => {
     setMessages(prev => [...prev, { id: crypto.randomUUID(), speaker, text }])
@@ -287,6 +307,8 @@ export default function VoiceBox() {
     if (isBusy) return
     setMessages([])
     orderRef.current = 0
+    ttsDisabled.current = false
+    ttsErrorReported.current = false
     setStatus('')
     setStatusType('')
     setConvState('idle')
