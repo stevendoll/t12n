@@ -46,6 +46,7 @@ function formatText(text: string): string {
 function newConversationId() {
   const id = crypto.randomUUID()
   sessionStorage.setItem('t12n_conversation_id', id)
+  sessionStorage.removeItem('t12n_order')
   return id
 }
 
@@ -53,6 +54,14 @@ function newVoiceIds() {
   const voices = assignVoices()
   sessionStorage.setItem('t12n_voices', JSON.stringify(voices))
   return voices
+}
+
+function getStoredOrder(): number {
+  return parseInt(sessionStorage.getItem('t12n_order') ?? '0', 10) || 0
+}
+
+function saveOrder(n: number) {
+  sessionStorage.setItem('t12n_order', String(n))
 }
 
 export default function VoiceBox() {
@@ -69,7 +78,7 @@ export default function VoiceBox() {
     return newVoiceIds()
   })
 
-  const orderRef = useRef(0)
+  const orderRef = useRef(getStoredOrder())
 
   type ConvState = 'idle' | 'visitor-speaking' | 'loading' | 'consultant-speaking' | 'waiting'
   const [convState,  setConvState]  = useState<ConvState>('idle')
@@ -243,6 +252,7 @@ export default function VoiceBox() {
 
       const replies = response.consultantReplies ?? []
       orderRef.current = visitorOrder + 1 + replies.length
+      saveOrder(orderRef.current)
 
       setStatus('')
       setConvState('consultant-speaking')

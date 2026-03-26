@@ -15,6 +15,11 @@ Parameters:
     Default: "api.t12n.ai"
     Description: Custom domain for the API
 
+  NotificationEmail:
+    Type: String
+    Default: "steven@dolltribe.com"
+    Description: Verified SES email address for contact form notifications
+
 Globals:
   Function:
     Runtime: python3.12
@@ -31,6 +36,7 @@ Globals:
         IDEAS_TABLE: !Ref ConversationIdeasTable
         POWERTOOLS_SERVICE_NAME: t12n-api
         LOG_LEVEL: INFO
+        NOTIFICATION_EMAIL: !Ref NotificationEmail
 
 Resources:
   # ── DynamoDB Tables ─────────────────────────────────────────────────────────
@@ -156,6 +162,11 @@ Resources:
               Action:
                 - bedrock:InvokeModel
                 - bedrock:InvokeModelWithResponseStream
+              Resource: "*"
+            - Effect: Allow
+              Action:
+                - ses:SendEmail
+                - sesv2:SendEmail
               Resource: "*"
       Events:
         ApiEvent:
