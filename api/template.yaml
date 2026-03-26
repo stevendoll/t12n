@@ -228,7 +228,6 @@ Resources:
 
   WarmupPermission:
     Type: AWS::Lambda::Permission
-    DependsOn: WarmupRule
     Properties:
       FunctionName: !Ref T12nApiFunction
       Action: lambda:InvokeFunction
