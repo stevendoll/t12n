@@ -50,3 +50,10 @@ export function postContact(body: ContactRequest): Promise<{ contactId: string }
     body: JSON.stringify(body),
   })
 }
+
+export function postError(error_type: string, message: string): Promise<{ ok: boolean }> {
+  return apiFetch('/errors', {
+    method: 'POST',
+    body: JSON.stringify({ error_type, message }),
+  })
+}

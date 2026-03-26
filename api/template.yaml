@@ -20,6 +20,17 @@ Parameters:
     Default: "steven@dolltribe.com"
     Description: Verified SES email address for contact form notifications
 
+  SlackmailUrl:
+    Type: String
+    Default: ""
+    Description: Slackmail service base URL for admin notifications
+
+  SlackmailApiKey:
+    Type: String
+    Default: ""
+    NoEcho: true
+    Description: Slackmail API key
+
 Globals:
   Function:
     Runtime: python3.12
@@ -37,6 +48,9 @@ Globals:
         POWERTOOLS_SERVICE_NAME: t12n-api
         LOG_LEVEL: INFO
         NOTIFICATION_EMAIL: !Ref NotificationEmail
+        SLACKMAIL_URL: !Ref SlackmailUrl
+        SLACKMAIL_API_KEY: !Ref SlackmailApiKey
+        TTS_ALERT_TOPIC_ARN: !Ref TtsAlertTopic
 
 Resources:
   # ── DynamoDB Tables ─────────────────────────────────────────────────────────
@@ -137,6 +151,16 @@ Resources:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: false
 
+  # ── SNS Alert Topic ──────────────────────────────────────────────────────────
+
+  TtsAlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: t12n-tts-alerts
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref NotificationEmail
+
   # ── Lambda Function ──────────────────────────────────────────────────────────
 
   T12nApiFunction:
@@ -168,6 +192,10 @@ Resources:
                 - ses:SendEmail
                 - sesv2:SendEmail
               Resource: "*"
+            - Effect: Allow
+              Action:
+                - sns:Publish
+              Resource: !Ref TtsAlertTopic
       Events:
         ApiEvent:
           Type: HttpApi

@@ -84,7 +84,9 @@ jobs:
             --no-fail-on-empty-changeset \
             --parameter-overrides \
               "AcmCertificateArn=${{ secrets.ACM_CERTIFICATE_ARN }}" \
-              "ApiDomainName=api.t12n.ai"
+              "ApiDomainName=api.t12n.ai" \
+              "SlackmailUrl=${{ secrets.SLACKMAIL_URL }}" \
+              "SlackmailApiKey=${{ secrets.SLACKMAIL_API_KEY }}"
 
       - name: Wait for API Gateway propagation
         run: sleep 30

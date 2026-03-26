@@ -14,6 +14,7 @@ Routes:
   GET  /admin/ideas                         — list all conversation ideas
   POST /admin/ideas                         — create idea
   PATCH /admin/ideas/{id}                   — update idea (toggle is_active, etc.)
+  POST /errors                              — client error reporting (TTS failures → Slack + SNS)
 
 Environment variables:
   ICEBREAKERS_TABLE   — DynamoDB table name
@@ -28,7 +29,7 @@ from aws_lambda_powertools.event_handler import APIGatewayHttpResolver, CORSConf
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
 import db  # noqa: F401
-from api.routers import icebreakers, turns, admin, contacts, conversations, ideas_admin
+from api.routers import icebreakers, turns, admin, contacts, conversations, ideas_admin, errors
 
 logger  = Logger(service="t12n-api")
 metrics = Metrics(namespace="T12nApi")
@@ -42,6 +43,7 @@ api.include_router(turns.router)         # POST /conversations/{id}/turns
 api.include_router(contacts.router)      # POST /contacts
 api.include_router(admin.router)         # /admin/icebreakers
 api.include_router(ideas_admin.router)   # /admin/ideas
+api.include_router(errors.router)        # POST /errors
 
 
 @logger.inject_lambda_context(log_event=False)
