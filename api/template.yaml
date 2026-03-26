@@ -210,7 +210,6 @@ Resources:
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Properties:
-      Name: t12n-api-warmup
       ScheduleExpression: rate(5 minutes)
       State: ENABLED
       Targets:
@@ -225,7 +224,7 @@ Resources:
       FunctionName: !Ref T12nApiFunction
       Action: lambda:InvokeFunction
       Principal: events.amazonaws.com
-      SourceArn: !Sub "arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/t12n-api-warmup"
+      SourceArn: !Sub "arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/${WarmupRule}"
 
 Conditions:
   HasCertificate: !Not [!Equals [!Ref AcmCertificateArn, ""]]
