@@ -43,22 +43,30 @@ function formatText(text: string): string {
   return text.replace(/\bknowing\b/gi, '<em>knowing</em>')
 }
 
+function newConversationId() {
+  const id = crypto.randomUUID()
+  sessionStorage.setItem('t12n_conversation_id', id)
+  return id
+}
+
+function newVoiceIds() {
+  const voices = assignVoices()
+  sessionStorage.setItem('t12n_voices', JSON.stringify(voices))
+  return voices
+}
+
 export default function VoiceBox() {
-  const [conversationId] = useState(() => {
+  const [conversationId, setConversationId] = useState(() => {
     const stored = sessionStorage.getItem('t12n_conversation_id')
     if (stored) return stored
-    const id = crypto.randomUUID()
-    sessionStorage.setItem('t12n_conversation_id', id)
-    return id
+    return newConversationId()
   })
 
   // Randomly assigned once per session, persisted across page reloads
-  const [voiceIds] = useState<Record<Speaker, string>>(() => {
+  const [voiceIds, setVoiceIds] = useState<Record<Speaker, string>>(() => {
     const stored = sessionStorage.getItem('t12n_voices')
     if (stored) { try { return JSON.parse(stored) as Record<Speaker, string> } catch { /* fall through */ } }
-    const voices = assignVoices()
-    sessionStorage.setItem('t12n_voices', JSON.stringify(voices))
-    return voices
+    return newVoiceIds()
   })
 
   const orderRef = useRef(0)
@@ -265,6 +273,21 @@ export default function VoiceBox() {
     if (text) void handleSubmit(text)
   }, [handleSubmit, convState])
 
+  const handleReset = useCallback(() => {
+    if (isBusy) return
+    setMessages([])
+    orderRef.current = 0
+    setStatus('')
+    setStatusType('')
+    setConvState('idle')
+    setConversationId(newConversationId())
+    setVoiceIds(newVoiceIds())
+    if (inputRef.current) inputRef.current.innerHTML = ''
+    getIcebreaker()
+      .then(ib => { if (inputRef.current) inputRef.current.innerHTML = formatText(ib.text) })
+      .catch(() => { if (inputRef.current) inputRef.current.innerHTML = formatText('The gap between knowing and doing is costing us.') })
+  }, [isBusy])
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handlePlay() }
   }
@@ -296,6 +319,13 @@ export default function VoiceBox() {
             {latencyMs !== null && <span className="voicebox-latency">{latencyMs}ms</span>}
           </span>
           <div className="voicebox-toolbar-right">
+            <button
+              className="voicebox-reset"
+              onClick={handleReset}
+              disabled={isBusy}
+              title="New conversation"
+              aria-label="New conversation"
+            >↺</button>
             <MicButton
               onTranscript={t => { if (inputRef.current) inputRef.current.textContent = t }}
               onEnd={handlePlay}
