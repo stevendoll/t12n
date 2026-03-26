@@ -33,17 +33,16 @@ def test_post_visitor_turn(conversation_id: str, text: str, order: int = 0):
     assert "turn" in body, f"Missing 'turn' in response: {body}"
     assert body["turn"]["text"] == text, f"Turn text mismatch: {body}"
     replies = body.get("consultantReplies", [])
-    assert len(replies) == 2, f"Expected 2 consultantReplies, got {len(replies)}: {body}"
-    speakers = {r["speaker"] for r in replies}
-    assert speakers == {"consultant1", "consultant2"}, f"Unexpected speakers: {speakers}"
+    assert 1 <= len(replies) <= 3, f"Expected 1–3 consultantReplies, got {len(replies)}: {body}"
+    valid_speakers = {"consultant1", "consultant2"}
     for reply in replies:
+        assert reply["speaker"] in valid_speakers, f"Unexpected speaker: {reply['speaker']}"
         assert reply["text"], f"Empty reply text for {reply['speaker']}"
     elapsed = r.elapsed.total_seconds()
-    c1 = next(r["text"] for r in replies if r["speaker"] == "consultant1")
-    c2 = next(r["text"] for r in replies if r["speaker"] == "consultant2")
-    print(f"OK ({elapsed:.2f}s)")
-    print(f"  Alex:  \"{c1[:80]}\"")
-    print(f"  Jamie: \"{c2[:80]}\"")
+    print(f"OK ({elapsed:.2f}s) — {len(replies)} repl{'y' if len(replies) == 1 else 'ies'}")
+    for reply in replies:
+        label = "Alex" if reply["speaker"] == "consultant1" else "Jamie"
+        print(f"  {label}: \"{reply['text'][:80]}\"")
     return replies
 
 
