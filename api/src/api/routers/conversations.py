@@ -11,6 +11,15 @@ logger = Logger(service="t12n-api")
 router = Router()
 
 
+_SNAKE_TO_CAMEL = {
+    "conversation_id": "conversationId",
+    "created_at":      "createdAt",
+    "used_ideas":      "usedIdeas",
+    "voice_id":        "voiceId",
+    "idea_id":         "ideaId",
+}
+
+
 def _fix_decimals(obj):
     """Recursively convert DynamoDB Decimal values to int/float for JSON serialization."""
     if isinstance(obj, Decimal):
@@ -22,12 +31,25 @@ def _fix_decimals(obj):
     return obj
 
 
+def _to_camel(obj):
+    """Convert known snake_case DynamoDB keys to camelCase for the frontend."""
+    if isinstance(obj, dict):
+        return {_SNAKE_TO_CAMEL.get(k, k): _to_camel(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_to_camel(v) for v in obj]
+    return obj
+
+
+def _serialize(obj):
+    return _to_camel(_fix_decimals(obj))
+
+
 @router.get("/conversations")
 def list_conversations():
     resp  = db.conversations_table.scan()
     items = resp.get("Items", [])
     items.sort(key=lambda x: x.get("created_at", ""), reverse=True)
-    return {"conversations": _fix_decimals(items)}
+    return {"conversations": [_serialize(i) for i in items]}
 
 
 @router.get("/conversations/<conversation_id>/turns")
@@ -40,4 +62,4 @@ def get_conversation_turns(conversation_id: str):
         raise NotFoundError(f"Conversation {conversation_id} not found")
 
     turns = sorted(items, key=lambda x: x["order"])
-    return {"turns": _fix_decimals(turns)}
+    return {"turns": [_serialize(t) for t in turns]}

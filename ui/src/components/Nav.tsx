@@ -14,7 +14,9 @@ export default function Nav() {
             <li><a href="#contact">Contact</a></li>
           </>
         )}
-        <li><a href={isHistory ? '#' : '#/history'}>{isHistory ? '← Home' : 'History'}</a></li>
+        {isHistory && (
+          <li><a href="#">← Home</a></li>
+        )}
       </ul>
     </nav>
   )
