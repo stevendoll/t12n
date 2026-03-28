@@ -13,16 +13,23 @@ const SAMPLE_RATE = 44100
 // VITE_CARTESIA_VOICES: comma-separated list of voice IDs to pick from randomly.
 // Falls back to legacy single-voice env vars when the list is absent or too short.
 
-const FALLBACK_VOICES: Record<Speaker, string> = {
-  visitor:     import.meta.env.VITE_CARTESIA_VOICE_ID as string ?? '',
-  consultant1: '6ccbfb76-1fc6-48f7-b71d-91ac6298247b', // Tessa
-  consultant2: 'db69127a-dbaf-4fa9-b425-2fe67680c348', // Clint
-}
+// Sonic 3 voices — all support [laughter] and emotion controls
+const SONIC3_VOICES = [
+  '0834f3df-e650-4766-a20c-5a93a43aa6e3', // Leo
+  '6776173b-fd72-460d-89b3-d85812ee518d', // Jace
+  'c961b81c-a935-4c17-bfb3-ba2239de8c2f', // Kyle
+  'f4a3a8e4-694c-4c45-9ca0-27caf97901b5', // Gavin
+  'cbaf8084-f009-4838-a096-07ee2e6612b1', // Maya
+  '6ccbfb76-1fc6-48f7-b71d-91ac6298247b', // Tessa
+  'cc00e582-ed66-4004-8336-0175b85c85f6', // Dana
+  '26403c37-80c1-4a1a-8692-540551ca2ae5', // Marian
+]
+
 
 function assignVoices(): Record<Speaker, string> {
-  const pool = (import.meta.env.VITE_CARTESIA_VOICES as string ?? '')
+  const envPool = (import.meta.env.VITE_CARTESIA_VOICES as string ?? '')
     .split(',').map(v => v.trim()).filter(Boolean)
-  if (pool.length < 3) return FALLBACK_VOICES
+  const pool = envPool.length >= 3 ? envPool : SONIC3_VOICES
   const shuffled = [...pool].sort(() => Math.random() - 0.5)
   return { visitor: shuffled[0], consultant1: shuffled[1], consultant2: shuffled[2] }
 }
