@@ -59,6 +59,16 @@ export function postError(error_type: string, message: string): Promise<{ ok: bo
   })
 }
 
+// ── Admin auth ────────────────────────────────────────────────────────────────
+
+export function postAdminLogin(email: string): Promise<{ ok: boolean }> {
+  return apiFetch('/admin/login', { method: 'POST', body: JSON.stringify({ email }) })
+}
+
+export function postAdminVerify(token: string): Promise<{ ok: boolean; email?: string }> {
+  return apiFetch('/admin/verify', { method: 'POST', body: JSON.stringify({ token }) })
+}
+
 // ── Admin ─────────────────────────────────────────────────────────────────────
 
 export function getAdminIcebreakers(): Promise<{ items: AdminIcebreaker[]; count: number }> {
