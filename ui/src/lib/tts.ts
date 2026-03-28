@@ -14,10 +14,10 @@ function stripSsml(text: string): string {
   return text
     .replace(/<emotion[^>]*\/?>/gi, '')
     .replace(/<\/emotion>/gi, '')
+    .replace(/\[laughter\]/gi, '')
     .replace(/\[clears throat\]/gi, '')
     .replace(/\s{2,}/g, ' ')
     .trim()
-  // Note: [laughter] is intentionally kept — Cartesia generates it natively
 }
 
 export function playTts(
