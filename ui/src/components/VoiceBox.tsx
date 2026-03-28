@@ -39,9 +39,9 @@ function stripSsml(text: string): string {
     .replace(/<emotion[^>]*\/?>/gi, '')
     .replace(/<\/emotion>/gi, '')
     .replace(/\[clears throat\]/gi, '')
+  // [laughter] intentionally kept — Sonic 3 (2025-01-13) generates it natively
     .replace(/\s{2,}/g, ' ')
     .trim()
-  // Note: [laughter] is intentionally kept — Cartesia generates it natively
 }
 
 const pause = (ms: number) => new Promise<void>(r => setTimeout(r, ms))
@@ -175,7 +175,7 @@ export default function VoiceBox() {
         analyserRef.current.fftSize = 256
         analyserRef.current.connect(audioCtx.destination)
 
-        const wsUrl = `wss://api.cartesia.ai/tts/websocket?api_key=${CARTESIA_API_KEY}&cartesia_version=2024-06-10`
+        const wsUrl = `wss://api.cartesia.ai/tts/websocket?api_key=${CARTESIA_API_KEY}&cartesia_version=2025-01-13`
         const ws = new WebSocket(wsUrl)
         ws.binaryType = 'arraybuffer'
 

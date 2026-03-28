@@ -15,9 +15,9 @@ function stripSsml(text: string): string {
     .replace(/<emotion[^>]*\/?>/gi, '')
     .replace(/<\/emotion>/gi, '')
     .replace(/\[clears throat\]/gi, '')
+  // [laughter] intentionally kept — Sonic 3 (2025-01-13) generates it natively
     .replace(/\s{2,}/g, ' ')
     .trim()
-  // Note: [laughter] is intentionally kept — Cartesia generates it natively
 }
 
 export function playTts(
@@ -36,7 +36,7 @@ export function playTts(
       return
     }
 
-    const wsUrl = `wss://api.cartesia.ai/tts/websocket?api_key=${apiKey}&cartesia_version=2024-06-10`
+    const wsUrl = `wss://api.cartesia.ai/tts/websocket?api_key=${apiKey}&cartesia_version=2025-01-13`
     const ws    = new WebSocket(wsUrl)
     ws.binaryType = 'arraybuffer'
 
