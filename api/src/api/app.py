@@ -29,7 +29,7 @@ from aws_lambda_powertools.event_handler import APIGatewayHttpResolver, CORSConf
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
 import db  # noqa: F401
-from api.routers import icebreakers, turns, admin, contacts, conversations, ideas_admin, errors
+from api.routers import icebreakers, turns, admin, contacts, conversations, ideas_admin, errors, auth
 
 logger  = Logger(service="t12n-api")
 metrics = Metrics(namespace="T12nApi")
@@ -44,6 +44,7 @@ api.include_router(contacts.router)      # POST /contacts
 api.include_router(admin.router)         # /admin/icebreakers
 api.include_router(ideas_admin.router)   # /admin/ideas
 api.include_router(errors.router)        # POST /errors
+api.include_router(auth.router)          # POST /admin/login, POST /admin/verify
 
 
 @logger.inject_lambda_context(log_event=False)

@@ -11,3 +11,4 @@ turns_table         = _dynamodb.Table(os.environ.get("TURNS_TABLE",         "con
 conversations_table = _dynamodb.Table(os.environ.get("CONVERSATIONS_TABLE", "t12n-conversations"))
 contacts_table      = _dynamodb.Table(os.environ.get("CONTACTS_TABLE",      "t12n-contacts"))
 ideas_table         = _dynamodb.Table(os.environ.get("IDEAS_TABLE",         "t12n-conversation-ideas"))
+admin_tokens_table  = _dynamodb.Table(os.environ.get("ADMIN_TOKENS_TABLE",  "t12n-admin-tokens"))
