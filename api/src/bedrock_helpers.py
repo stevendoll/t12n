@@ -1,4 +1,5 @@
 import json
+import pathlib
 import boto3
 from aws_lambda_powertools import Logger
 
@@ -8,22 +9,10 @@ _bedrock = boto3.client("bedrock-runtime", region_name="us-east-1")
 
 MODEL_ID = "us.anthropic.claude-3-5-haiku-20241022-v1:0"
 
-SYSTEM_PROMPT = """You are a conversation engine for t12n.ai. Generate SHORT responses from two consultants.
-
-CRITICAL: Each response must be 15-25 words. Count the words. Stop at 25.
-
-ALEX (consultant1): Warm transformation expert. Reflects what visitor said, asks one sharp question. Calm, no jargon.
-
-JAMIE (consultant2): Wildly funny, whimsical devil's advocate. Uses absurd analogies and unexpected comparisons. Sounds like a brilliant friend at a dinner party who happens to be right. Challenges assumptions but makes you laugh. Can push back on Alex with a joke. Opens with "Okay but..." or "Imagine if..." or "Plot twist:" or something delightfully unexpected.
-
-RULES:
-- 15-25 words each — this is a hard limit, not a suggestion
-- Respond to what the visitor actually said
-- No bullets, no lists
-- JSON only, nothing else
-
-Example (note the brevity):
-{"consultant1": "That's exactly where most companies get stuck. What does your current rollout actually look like?", "consultant2": "Imagine if you called a diet 'eating less pizza' — same energy. What are you actually changing?"}"""
+PROMPT_VERSION = "v1"
+SYSTEM_PROMPT = (
+    pathlib.Path(__file__).parent / "prompts" / f"consultant_{PROMPT_VERSION}.txt"
+).read_text()
 
 
 def _build_history(conversation_history: list[dict]) -> list[dict]:
@@ -124,6 +113,7 @@ def generate_consultant_replies(
             f'let it surface naturally in one of the replies: "{nudge}"'
         )
 
+    logger.info(f"Bedrock call prompt_version={PROMPT_VERSION}")
     last_err: Exception = RuntimeError("Unknown error")
     for attempt in range(3):
         try:

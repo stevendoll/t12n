@@ -31,10 +31,10 @@ function stripSsml(text: string): string {
   return text
     .replace(/<emotion[^>]*\/?>/gi, '')
     .replace(/<\/emotion>/gi, '')
-    .replace(/\[laughter\]/gi, '')
     .replace(/\[clears throat\]/gi, '')
     .replace(/\s{2,}/g, ' ')
     .trim()
+  // Note: [laughter] is intentionally kept — Cartesia generates it natively
 }
 
 const pause = (ms: number) => new Promise<void>(r => setTimeout(r, ms))
@@ -140,7 +140,7 @@ export default function VoiceBox() {
     postError('tts_failure', message).catch(() => { /* best-effort */ })
   }, [])
 
-  const speakAs = useCallback((speaker: Speaker, text: string, overrideVoiceId?: string): Promise<void> => {
+  const speakAs = useCallback((speaker: Speaker, text: string, overrideVoiceId?: string, emotion?: string): Promise<void> => {
     return new Promise((resolve, _reject) => {
       const voiceId = overrideVoiceId ?? voiceIds[speaker]
       const clean   = stripSsml(text)
@@ -208,6 +208,7 @@ export default function VoiceBox() {
             voice: { mode: 'id', id: voiceId },
             output_format: { container: 'raw', encoding: 'pcm_f32le', sample_rate: SAMPLE_RATE },
           }
+          if (emotion) payload['generation_config'] = { emotion }
           payload['continue'] = false
           ws.send(JSON.stringify(payload))
         }
@@ -282,7 +283,7 @@ export default function VoiceBox() {
         if (i > 0) await pause(2000)
         playPopSound()
         addBubble(reply.speaker, reply.text)
-        await speakAs(reply.speaker, reply.text, reply.voiceId)
+        await speakAs(reply.speaker, reply.text, reply.voiceId, reply.emotion)
       }
 
       setConvState('waiting')

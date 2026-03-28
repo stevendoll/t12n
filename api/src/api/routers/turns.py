@@ -1,3 +1,4 @@
+import re
 import random
 from datetime import datetime, timezone
 
@@ -8,6 +9,14 @@ from boto3.dynamodb.conditions import Key, Attr
 import db
 from bedrock_helpers import generate_consultant_replies
 from models import TurnRequest, Turn, ConsultantReply, TurnResponse
+
+
+def _extract_emotion(text: str) -> tuple[str, str | None]:
+    """Strip leading <emotion:X> tag and return (clean_text, emotion_name)."""
+    m = re.match(r'<emotion:(\w+)>\s*', text)
+    if m:
+        return text[m.end():].strip(), m.group(1)
+    return text, None
 
 logger = Logger(service="t12n-api")
 router = Router()
@@ -193,12 +202,13 @@ def post_turn(conversation_id: str):
 
     for idx, speaker_key in enumerate(sequence):
         if speaker_key == "consultant2" and idx == 2 and followup_text:
-            text = followup_text
+            raw_text = followup_text
         else:
-            text = replies[speaker_key]
+            raw_text = replies[speaker_key]
 
-        reply_order    = body.order + idx + 1
-        reply_voice_id = voices.get(speaker_key)
+        text, emotion    = _extract_emotion(raw_text)
+        reply_order      = body.order + idx + 1
+        reply_voice_id   = voices.get(speaker_key)
 
         item: dict = {
             "conversation_id": conversation_id,
@@ -228,6 +238,7 @@ def post_turn(conversation_id: str):
             text=text,
             speaker=speaker_key,  # type: ignore[arg-type]
             voice_id=reply_voice_id or None,
+            emotion=emotion,
         ))
 
     # ── Record once-only idea as used ─────────────────────────────────────────
