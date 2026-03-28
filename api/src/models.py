@@ -47,6 +47,7 @@ class ConsultantReply(T12nModel):
     text: str
     speaker: Literal["consultant1", "consultant2"]
     voice_id: str | None = None
+    emotion: str | None = None
 
 
 class TurnResponse(T12nModel):

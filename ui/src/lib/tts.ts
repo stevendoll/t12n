@@ -5,14 +5,19 @@
 
 const SAMPLE_RATE = 44100
 
+export interface GenerationConfig {
+  emotion?: string
+  speed?: number
+}
+
 function stripSsml(text: string): string {
   return text
     .replace(/<emotion[^>]*\/?>/gi, '')
     .replace(/<\/emotion>/gi, '')
-    .replace(/\[laughter\]/gi, '')
     .replace(/\[clears throat\]/gi, '')
     .replace(/\s{2,}/g, ' ')
     .trim()
+  // Note: [laughter] is intentionally kept — Cartesia generates it natively
 }
 
 export function playTts(
@@ -20,6 +25,7 @@ export function playTts(
   voiceId: string,
   text: string,
   audioCtx: AudioContext,
+  generationConfig?: GenerationConfig,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const clean = stripSsml(text)
@@ -73,6 +79,9 @@ export function playTts(
         transcript:    clean,
         voice:         { mode: 'id', id: voiceId },
         output_format: { container: 'raw', encoding: 'pcm_f32le', sample_rate: SAMPLE_RATE },
+      }
+      if (generationConfig && Object.keys(generationConfig).length > 0) {
+        payload['generation_config'] = generationConfig
       }
       payload['continue'] = false
       ws.send(JSON.stringify(payload))

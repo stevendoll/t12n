@@ -27,6 +27,7 @@ export interface ConsultantReply {
   text: string
   speaker: 'consultant1' | 'consultant2'
   voiceId?: string
+  emotion?: string
 }
 
 export interface TurnResponse {
@@ -53,4 +54,10 @@ export interface ChatMessage {
   id: string
   speaker: Speaker
   text: string
+}
+
+export interface AdminIcebreaker {
+  id: string
+  text: string
+  isActive?: string
 }

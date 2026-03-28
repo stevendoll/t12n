@@ -5,6 +5,7 @@ import type {
   Conversation,
   ContactRequest,
   Turn,
+  AdminIcebreaker,
 } from './types'
 
 const BASE = import.meta.env.VITE_API_URL ?? ''
@@ -56,4 +57,28 @@ export function postError(error_type: string, message: string): Promise<{ ok: bo
     method: 'POST',
     body: JSON.stringify({ error_type, message }),
   })
+}
+
+// ── Admin ─────────────────────────────────────────────────────────────────────
+
+export function getAdminIcebreakers(): Promise<{ items: AdminIcebreaker[]; count: number }> {
+  return apiFetch('/admin/icebreakers')
+}
+
+export function createIcebreaker(text: string): Promise<AdminIcebreaker> {
+  return apiFetch('/admin/icebreakers', {
+    method: 'POST',
+    body: JSON.stringify({ text, is_active: 'true' }),
+  })
+}
+
+export function updateIcebreaker(id: string, patch: { text?: string; is_active?: string }): Promise<{ updated: string }> {
+  return apiFetch(`/admin/icebreakers/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(patch),
+  })
+}
+
+export function deleteIcebreaker(id: string): Promise<{ deleted: string }> {
+  return apiFetch(`/admin/icebreakers/${id}`, { method: 'DELETE' })
 }
