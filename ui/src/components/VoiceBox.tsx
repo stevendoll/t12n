@@ -175,7 +175,7 @@ export default function VoiceBox() {
         analyserRef.current.fftSize = 256
         analyserRef.current.connect(audioCtx.destination)
 
-        const wsUrl = `wss://api.cartesia.ai/tts/websocket?api_key=${CARTESIA_API_KEY}&cartesia_version=2025-01-13`
+        const wsUrl = `wss://api.cartesia.ai/tts/websocket?api_key=${CARTESIA_API_KEY}&cartesia_version=2025-04-16`
         const ws = new WebSocket(wsUrl)
         ws.binaryType = 'arraybuffer'
 
@@ -211,7 +211,7 @@ export default function VoiceBox() {
         ws.onopen = () => {
           setStatus('Synthesizing...')
           const payload: Record<string, unknown> = {
-            context_id: crypto.randomUUID(), model_id: 'sonic-english', transcript: clean,
+            context_id: crypto.randomUUID(), model_id: 'sonic-3', transcript: clean,
             voice: { mode: 'id', id: voiceId },
             output_format: { container: 'raw', encoding: 'pcm_f32le', sample_rate: SAMPLE_RATE },
           }
