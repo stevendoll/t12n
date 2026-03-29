@@ -19,7 +19,7 @@ jobs:
         working-directory: api
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -43,7 +43,7 @@ jobs:
         working-directory: api
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up SAM CLI
         uses: aws-actions/setup-sam@v2
@@ -51,11 +51,10 @@ jobs:
           use-installer: true
 
       - name: Configure dummy AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: AKIAIOSFODNN7EXAMPLE
-          aws-secret-access-key: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
-          aws-region: us-east-1
+        run: |
+          echo "AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE" >> "$GITHUB_ENV"
+          echo "AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" >> "$GITHUB_ENV"
+          echo "AWS_DEFAULT_REGION=us-east-1" >> "$GITHUB_ENV"
 
       - name: SAM validate
         run: sam validate --lint
@@ -68,10 +67,10 @@ jobs:
         working-directory: ui
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "24"
           cache: npm
