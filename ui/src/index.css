@@ -189,10 +189,10 @@ nav ul a:hover { color: var(--accent); }
   justify-content: center;
   cursor: none;
   transition: background 0.2s;
-  background: rgba(245,240,232,0.1);
-  color: var(--white);
+  background: var(--accent);
+  color: var(--black);
 }
-.voicebox-reset:hover:not(:disabled) { background: rgba(245,240,232,0.18); }
+.voicebox-reset:hover:not(:disabled) { background: var(--accent-bright); }
 .voicebox-reset:disabled { opacity: 0.25; cursor: default; }
 
 /* Mic button */
@@ -206,11 +206,11 @@ nav ul a:hover { color: var(--accent); }
   justify-content: center;
   cursor: none;
   transition: background 0.2s;
-  background: var(--accent);
+  background: #f5c842;
   color: var(--black);
 }
 
-.mic-btn:hover { background: var(--accent-bright); }
+.mic-btn:hover { background: #f7d465; }
 .mic-btn.recording {
   background: #ff6b6b;
   animation: micPulse 1s ease-in-out infinite;
