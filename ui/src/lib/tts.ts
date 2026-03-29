@@ -36,7 +36,7 @@ export function playTts(
       return
     }
 
-    const wsUrl = `wss://api.cartesia.ai/tts/websocket?api_key=${apiKey}&cartesia_version=2025-01-13`
+    const wsUrl = `wss://api.cartesia.ai/tts/websocket?api_key=${apiKey}&cartesia_version=2025-04-16`
     const ws    = new WebSocket(wsUrl)
     ws.binaryType = 'arraybuffer'
 
@@ -75,7 +75,7 @@ export function playTts(
     ws.onopen = () => {
       const payload: Record<string, unknown> = {
         context_id:    crypto.randomUUID(),
-        model_id:      'sonic-english',
+        model_id:      'sonic-3',
         transcript:    clean,
         voice:         { mode: 'id', id: voiceId },
         output_format: { container: 'raw', encoding: 'pcm_f32le', sample_rate: SAMPLE_RATE },
