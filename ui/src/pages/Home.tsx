@@ -24,8 +24,8 @@ export default function Home() {
         <div className="stats-grid">
           {[
             { num: '12+', desc: 'Years in enterprise technology' },
-            { num: '40+', desc: 'Organizations transformed' },
-            { num: '$2B+', desc: 'In value unlocked' },
+            { num: '12+', desc: 'Business Processes transformed' },
+            { num: '$16M+', desc: 'In value unlocked' },
             { num: 'Day 1', desc: 'Mindset, always' },
           ].map(({ num, desc }) => (
             <div key={num} className="stat-cell">
