@@ -47,7 +47,11 @@ function stripSsml(text: string): string {
 const pause = (ms: number) => new Promise<void>(r => setTimeout(r, ms))
 
 function formatText(text: string): string {
-  return text.replace(/\bknowing\b/gi, '<em>knowing</em>')
+  return text
+    .replace(/\[laughter\]/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+    .replace(/\bknowing\b/gi, '<em>knowing</em>')
 }
 
 function newConversationId() {
