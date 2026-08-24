@@ -10,7 +10,7 @@ export default function Nav() {
         {!isHistory && (
           <>
             <li><a href="#about">About</a></li>
-            <li><a href="#services">Services</a></li>
+            <li><a href="#the-work">The Work</a></li>
             <li><a href="#contact">Contact</a></li>
           </>
         )}
