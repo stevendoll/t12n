@@ -21,6 +21,7 @@ jobs:
 
       - name: Run Claude Code review
         uses: anthropics/claude-code-action@v1
+        continue-on-error: true
         with:
           anthropic_federation_rule_id: fdrl_01RmL7KaPFtTXNXTqyDFhGFt
           anthropic_organization_id: fa60f9a2-ab08-4163-a6ef-727ef035c7ba

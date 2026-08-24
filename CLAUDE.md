@@ -44,7 +44,12 @@ log is the curated, git-tracked, human-readable index meant to be cross-referenc
   this repo's `pull_request` events specifically. The `anthropic_federation_rule_id` /
   `anthropic_organization_id` / `anthropic_service_account_id` / `anthropic_workspace_id`
   values in the workflow are identifiers, not credentials, so they're committed directly —
-  don't mistake them for something that needs to move into GitHub Secrets.
+  don't mistake them for something that needs to move into GitHub Secrets. The review step
+  has `continue-on-error: true`, so the check shows green even if it fails (e.g. the
+  workspace runs out of Anthropic credits) — a passing `Automated code review` check does
+  NOT guarantee a review actually ran. If you need to know whether it really posted
+  anything, check the run log or the PR's review comments directly, don't just trust the
+  checkmark.
 - **Smoke tests**: `scripts/smoke_test.py` runs post-deploy against the live API
   (`deploy-api.yml`) — icebreaker fetch, visitor turn, and contact-form submission. Note the
   contact-form check writes a real row to the `contacts` table and triggers a real
