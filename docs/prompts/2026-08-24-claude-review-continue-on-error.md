@@ -20,7 +20,7 @@ confirmed root cause was the Anthropic workspace running out of credits.)
 - **Turns to completion:** 1
 - **Revisions requested:** 0
 - **Diff:** +41 / -1, 4 files
-- **Lead time:** _PR open → merge_
+- **Lead time:** PR open → merge: 6m40s (2026-08-24T04:41:12Z → 04:47:52Z)
 
 ## Notes
 

@@ -23,7 +23,7 @@ pr: https://github.com/stevendoll/t12n/pull/48
 - **Turns to completion:** 2
 - **Revisions requested:** 0
 - **Diff:** +101 / -100, 7 files
-- **Lead time:** _PR open → merge_
+- **Lead time:** PR open → merge: 13m53s (2026-08-24T04:32:20Z → 04:46:13Z)
 
 ## Notes
 
