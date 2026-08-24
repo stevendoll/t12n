@@ -2,7 +2,7 @@
 date: 2026-08-24
 session: 83eedefb-1e23-4166-b7f5-b5d84cdf3b00
 effort: high
-pr: TBD
+pr: https://github.com/stevendoll/t12n/pull/35
 ---
 
 ## Prompt
@@ -20,10 +20,10 @@ pr: TBD
 
 ## Outcome
 
-- **PR:** _fill in once opened_
+- **PR:** [#35](https://github.com/stevendoll/t12n/pull/35)
 - **Turns to completion:** 3
 - **Revisions requested:** 0
-- **Diff:** _fill in from `gh pr view --json additions,deletions,changedFiles`_
+- **Diff:** +1183 / -97, 25 files changed
 - **Lead time:** _first prompt → merge_
 
 ## Notes
