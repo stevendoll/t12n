@@ -19,7 +19,7 @@ jobs:
         working-directory: api
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -43,7 +43,7 @@ jobs:
         working-directory: api
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -67,7 +67,7 @@ jobs:
         working-directory: api
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Set up SAM CLI
         uses: aws-actions/setup-sam@v2
@@ -91,7 +91,7 @@ jobs:
         working-directory: ui
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Set up Node.js
         uses: actions/setup-node@v5
