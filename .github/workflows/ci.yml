@@ -103,6 +103,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Lint
+        run: npm run lint
+
       - name: Build (stub env vars)
         env:
           VITE_API_URL: https://api.t12n.ai

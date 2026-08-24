@@ -65,12 +65,38 @@ again before every API deploy (`deploy-api.yml`). PRs also get an automated Clau
 ```
 Browser
   └── t12n.ai (CloudFront → S3, React SPA)
-        └── api.t12n.ai (API Gateway → Lambda)
-              ├── GET  /conversations/icebreakers     → random icebreaker from DynamoDB
-              └── POST /conversations/{id}/turns      → save turn, call Bedrock for consultant replies
+        └── api.t12n.ai (API Gateway → single Lambda, Powertools router)
+              ├── DynamoDB (6 tables — icebreakers, turns, conversations, contacts, ideas, admin tokens)
+              ├── Bedrock (Claude 3.5 Haiku, cross-region inference) — consultant replies
+              └── SES (magic-link emails, contact-form notifications)
 ```
 
-Cartesia TTS runs entirely in the browser via WebSocket — no Lambda proxy.
+Cartesia TTS runs entirely in the browser via WebSocket — no Lambda proxy. CORS is scoped to
+`https://t12n.ai` + `http://localhost:5173` (local dev). Active X-Ray tracing is on, with
+Powertools instrumenting the DynamoDB/Bedrock/SES calls the Lambda makes.
+
+### API routes
+
+All routes are served by the one Lambda (`api/src/api/app.py`), routed internally via
+Powertools' `APIGatewayHttpResolver`.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | `/conversations/icebreakers` | Random active icebreaker |
+| GET | `/conversations` | List conversations (history) |
+| GET | `/conversations/{id}/turns` | All turns for a conversation |
+| POST | `/conversations/{id}/turns` | Save a turn; visitor turns trigger Bedrock replies |
+| POST | `/contacts` | Save a contact-form submission |
+| GET | `/admin/icebreakers` | List all icebreakers |
+| POST | `/admin/icebreakers` | Create an icebreaker |
+| PATCH | `/admin/icebreakers/{id}` | Update an icebreaker |
+| DELETE | `/admin/icebreakers/{id}` | Delete an icebreaker |
+| GET | `/admin/ideas` | List all conversation ideas |
+| POST | `/admin/ideas` | Create a conversation idea |
+| PATCH | `/admin/ideas/{id}` | Update a conversation idea |
+| POST | `/errors` | Client error reporting (TTS failures → Slack) |
+| POST | `/admin/login` | Request a magic-link login token |
+| POST | `/admin/verify` | Exchange a magic-link token for a session |
 
 ## Conversation engine
 

@@ -152,7 +152,7 @@ export default function VoiceBox() {
   }, [])
 
   const speakAs = useCallback((speaker: Speaker, text: string, overrideVoiceId?: string, emotion?: string): Promise<void> => {
-    return new Promise((resolve, _reject) => {
+    return new Promise((resolve) => {
       const voiceId = overrideVoiceId ?? voiceIds[speaker]
       const clean   = stripSsml(text)
 

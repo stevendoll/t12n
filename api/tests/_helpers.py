@@ -26,6 +26,7 @@ def seed_env() -> None:
     os.environ.setdefault("SITE_URL",           "https://t12n.ai")
     os.environ.setdefault("SLACKMAIL_URL",      "https://slackmail.test")
     os.environ.setdefault("SLACKMAIL_API_KEY",  "test-key")
+    os.environ.setdefault("POWERTOOLS_TRACE_DISABLED", "true")
 
 
 def apigw_event(method: str, path: str, body: dict | None = None, path_params: dict | None = None) -> dict:
