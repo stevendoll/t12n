@@ -7,7 +7,7 @@ logger = Logger(service="t12n-api")
 
 _bedrock = boto3.client("bedrock-runtime", region_name="us-east-1")
 
-MODEL_ID = "us.anthropic.claude-3-5-haiku-20241022-v1:0"
+MODEL_ID = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
 
 PROMPT_VERSION = "v1"
 SYSTEM_PROMPT = (
