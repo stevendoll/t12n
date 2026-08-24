@@ -13,10 +13,10 @@ pr: TBD
 
 ## Outcome
 
-- **PR:** _fill in once opened_
+- **PR:** [#51](https://github.com/stevendoll/t12n/pull/51)
 - **Turns to completion:** 2
 - **Revisions requested:** 0
-- **Diff:** _fill in from `gh pr view --json additions,deletions,changedFiles`_
+- **Diff:** +57 / -15, 3 files
 - **Lead time:** _PR open → merge_
 
 ## Notes
