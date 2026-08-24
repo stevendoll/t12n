@@ -17,7 +17,7 @@ pr: TBD
 - **Turns to completion:** 2
 - **Revisions requested:** 0
 - **Diff:** +57 / -15, 3 files
-- **Lead time:** _PR open → merge_
+- **Lead time:** PR open → merge: 1m44s (2026-08-24T07:26:17Z → 07:28:01Z)
 
 ## Notes
 
