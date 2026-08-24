@@ -1,6 +1,6 @@
 # t12n.ai
 
-Website and API for [t12n.ai](https://t12n.ai) — AI Transformation Consulting.
+Website and API for [t12n.ai](https://t12n.ai) — AI Transformation.
 
 ## Structure
 

@@ -113,7 +113,7 @@ export default function VoiceBox() {
       .then(ib => { if (inputRef.current) inputRef.current.innerHTML = formatText(ib.text) })
       .catch(() => {
         if (inputRef.current && !inputRef.current.textContent?.trim())
-          inputRef.current.innerHTML = formatText('The gap between knowing and doing is costing us.')
+          inputRef.current.innerHTML = formatText("This is probably the biggest revolution you'll live through. It's also drinking your water and lying to your uncle on Facebook. Both are true. Let's talk anyway.")
       })
   }, [])
 
@@ -329,7 +329,7 @@ export default function VoiceBox() {
     if (inputRef.current) inputRef.current.innerHTML = ''
     getIcebreaker()
       .then(ib => { if (inputRef.current) inputRef.current.innerHTML = formatText(ib.text) })
-      .catch(() => { if (inputRef.current) inputRef.current.innerHTML = formatText('The gap between knowing and doing is costing us.') })
+      .catch(() => { if (inputRef.current) inputRef.current.innerHTML = formatText("This is probably the biggest revolution you'll live through. It's also drinking your water and lying to your uncle on Facebook. Both are true. Let's talk anyway.") })
   }, [isBusy])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

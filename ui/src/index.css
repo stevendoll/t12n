@@ -110,6 +110,17 @@ nav ul a:hover { color: var(--accent); }
   margin-bottom: 32px;
 }
 
+#hero .hero-headline {
+  font-family: 'Instrument Serif', serif;
+  font-weight: 400;
+  font-size: clamp(1.5rem, 3.2vw, 2.3rem);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  max-width: 640px;
+  margin: 0 0 40px;
+  color: var(--white);
+}
+
 /* VoiceBox */
 .voicebox {
   width: 100%;
@@ -355,63 +366,14 @@ hr {
   font-weight: normal;
 }
 
-/* Services section */
-#services {
+/* The Work section */
+#the-work {
   max-width: 900px;
   margin: 0 auto;
   padding: 120px 48px;
   text-align: center;
   position: relative;
   z-index: 1;
-}
-
-.services-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2px;
-}
-
-.service-card {
-  border: 1px solid var(--border);
-  padding: 40px 36px;
-  background: rgba(245,240,232,0.02);
-  position: relative;
-  overflow: hidden;
-  text-align: left;
-  transition: background 0.2s;
-}
-
-.service-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0;
-  height: 2px;
-  width: 0;
-  background: var(--accent);
-  transition: width 0.4s;
-}
-
-.service-card:hover { background: rgba(77,182,172,0.04); }
-.service-card:hover::before { width: 100%; }
-
-.service-num {
-  font-size: 0.65rem;
-  letter-spacing: 0.15em;
-  color: rgba(245,240,232,0.2);
-  margin-bottom: 24px;
-}
-
-.service-title {
-  font-family: 'Instrument Serif', serif;
-  font-size: 1.5rem;
-  line-height: 1.1;
-  margin-bottom: 16px;
-}
-
-.service-desc {
-  font-size: 0.8rem;
-  line-height: 1.8;
-  color: rgba(245,240,232,0.4);
 }
 
 /* Footer */
@@ -832,11 +794,9 @@ footer a {
   #hero { padding: 100px 24px 60px; }
 
   #about   { padding: 80px 24px; }
-  #services { padding: 80px 24px; }
+  #the-work { padding: 80px 24px; }
 
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
-
-  .services-grid { grid-template-columns: repeat(2, 1fr); }
 
   footer { padding: 32px 24px; }
 }
@@ -864,6 +824,8 @@ footer a {
 
   #hero .label { font-size: 0.75rem; margin-bottom: 20px; }
 
+  #hero .hero-headline { font-size: 1.35rem; margin-bottom: 28px; }
+
   .voicebox-input {
     padding: 14px 16px;
     min-height: 80px;
@@ -888,7 +850,7 @@ footer a {
   }
 
   #about   { padding: 60px 16px; }
-  #services { padding: 60px 16px; }
+  #the-work { padding: 60px 16px; }
 
   #about h2 { margin-bottom: 32px; }
 
@@ -899,10 +861,6 @@ footer a {
   .stat-cell { padding: 20px 16px; }
 
   .stat-num { font-size: 2.2rem; }
-
-  .services-grid { grid-template-columns: 1fr; }
-
-  .service-card { padding: 28px 24px; }
 
   footer {
     padding: 28px 16px;
