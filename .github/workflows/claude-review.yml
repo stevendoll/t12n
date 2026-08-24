@@ -1,0 +1,33 @@
+name: Claude review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+jobs:
+  review:
+    name: Automated code review
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude Code review
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_federation_rule_id: fdrl_01RmL7KaPFtTXNXTqyDFhGFt
+          anthropic_organization_id: fa60f9a2-ab08-4163-a6ef-727ef035c7ba
+          anthropic_service_account_id: svac_01Kj2mpsv8CKjEUdeWBUT8Ym
+          anthropic_workspace_id: wrkspc_01ScTNCN2BhvXg9aynpgmTFS
+          prompt: |
+            Review the changes in this pull request for correctness bugs and
+            reuse/simplification/efficiency cleanups. Post findings as inline
+            PR review comments, ranked most-severe first. If nothing of
+            substance is found, say so briefly instead of inventing findings.

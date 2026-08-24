@@ -46,6 +46,22 @@ def test_post_visitor_turn(conversation_id: str, text: str, order: int = 0):
     return replies
 
 
+def test_post_contact():
+    url = f"{BASE_URL}/contacts"
+    print(f"POST {url} ...", end=" ")
+    payload = {
+        "name": "Smoke Test",
+        "email": "smoke-test@t12n.ai",
+        "message": "Automated post-deploy smoke test — safe to ignore.",
+    }
+    r = requests.post(url, json=payload, timeout=15)
+    assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+    body = r.json()
+    assert "contactId" in body, f"Missing 'contactId' in response: {body}"
+    print(f"OK ({r.elapsed.total_seconds():.2f}s) — contactId={body['contactId']}")
+    return body
+
+
 def main():
     print(f"\nSmoke tests → {BASE_URL}\n{'─' * 60}")
     errors = []
@@ -67,6 +83,11 @@ def main():
         test_post_visitor_turn(conv_id, "We keep running pilots but nothing scales.", order=3)
     except Exception as e:
         errors.append(f"POST /conversations/{{id}}/turns (visitor, order=3): {e}")
+
+    try:
+        test_post_contact()
+    except Exception as e:
+        errors.append(f"POST /contacts: {e}")
 
     print(f"\n{'─' * 60}")
     if errors:

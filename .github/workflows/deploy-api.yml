@@ -38,7 +38,10 @@ jobs:
         run: pipenv install --dev
 
       - name: Run tests
-        run: pipenv run python -m pytest tests/ -v
+        run: pipenv run python -m pytest tests/ -v --cov=src --cov-report=term-missing --cov-fail-under=60
+
+      - name: Run behave
+        run: pipenv run behave
 
   deploy:
     name: SAM deploy
