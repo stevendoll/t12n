@@ -24,7 +24,9 @@ pr: https://github.com/stevendoll/t12n/pull/35
 - **Turns to completion:** 3
 - **Revisions requested:** 0
 - **Diff:** +1183 / -97, 25 files changed
-- **Lead time:** _first prompt → merge_
+- **Lead time:** PR open → merge: 7m34s (2026-08-24T03:19:32Z → 03:27:06Z). First-prompt →
+  merge isn't precisely known — no timestamp was captured when the request started; PR-open
+  time is the earliest reliably measurable point.
 
 ## Notes
 
