@@ -3,10 +3,12 @@ import urllib.request
 import json
 from datetime import datetime, timezone
 
-from aws_lambda_powertools import Logger
+from aws_lambda_powertools import Logger, Metrics
 from aws_lambda_powertools.event_handler.api_gateway import Router
+from aws_lambda_powertools.metrics import MetricUnit
 
 logger         = Logger(service="t12n-api")
+metrics        = Metrics()
 router         = Router()
 _SLACKMAIL_URL = os.environ.get("SLACKMAIL_URL", "")
 _SLACKMAIL_KEY = os.environ.get("SLACKMAIL_API_KEY", "")
@@ -40,6 +42,7 @@ def report_error():
     now        = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     logger.warning(f"Client error reported — type={error_type} message={message}")
+    metrics.add_metric(name="ClientErrorReported", unit=MetricUnit.Count, value=1)
 
     _send_slack(f"⚠️ TTS failure on t12n.ai\nError: {message}\nTime: {now}")
 

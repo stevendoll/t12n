@@ -21,11 +21,9 @@ export default function MicButton({ onTranscript, onEnd, onError, disabled }: Pr
 
   const toggle = () => {
     if (recording) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       recognitionRef.current?.stop()
       return
     }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     const rec = new SR()
     rec.continuous = false
     rec.interimResults = true
@@ -34,7 +32,6 @@ export default function MicButton({ onTranscript, onEnd, onError, disabled }: Pr
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rec.onresult = (e: any) => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
       const transcript = Array.from(e.results as ArrayLike<SpeechRecognitionResult>)
         .map(r => r[0].transcript).join('')
       onTranscript(transcript)
@@ -43,11 +40,9 @@ export default function MicButton({ onTranscript, onEnd, onError, disabled }: Pr
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rec.onerror = (e: any) => {
       setRecording(false)
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       onError(`Mic error: ${e.error}`)
     }
     setRecording(true)
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     rec.start()
   }
 

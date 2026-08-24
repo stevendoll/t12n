@@ -3,14 +3,16 @@ import uuid
 from datetime import datetime, timezone
 
 import boto3
-from aws_lambda_powertools import Logger
+from aws_lambda_powertools import Logger, Metrics
 from aws_lambda_powertools.event_handler.api_gateway import Router
 from aws_lambda_powertools.event_handler.exceptions import BadRequestError
+from aws_lambda_powertools.metrics import MetricUnit
 
 import db
 from models import ContactRequest
 
 logger        = Logger(service="t12n-api")
+metrics       = Metrics()
 router        = Router()
 _ses          = boto3.client("sesv2", region_name="us-east-1")
 _NOTIFY_EMAIL = os.environ.get("NOTIFICATION_EMAIL", "")
@@ -66,5 +68,6 @@ def create_contact():
     })
 
     logger.info(f"Contact saved: {contact_id} from {body.email}")
+    metrics.add_metric(name="ContactSubmitted", unit=MetricUnit.Count, value=1)
     _send_notification(contact_id, body.name, body.email, body.message)
     return {"contactId": contact_id, "createdAt": now}

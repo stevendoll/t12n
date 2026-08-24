@@ -2,8 +2,9 @@ import re
 import random
 from datetime import datetime, timezone
 
-from aws_lambda_powertools import Logger
+from aws_lambda_powertools import Logger, Metrics
 from aws_lambda_powertools.event_handler.api_gateway import Router
+from aws_lambda_powertools.metrics import MetricUnit
 from boto3.dynamodb.conditions import Key, Attr
 
 import db
@@ -18,8 +19,9 @@ def _extract_emotion(text: str) -> tuple[str, str | None]:
         return text[m.end():].strip(), m.group(1)
     return text, None
 
-logger = Logger(service="t12n-api")
-router = Router()
+logger  = Logger(service="t12n-api")
+metrics = Metrics()
+router  = Router()
 
 
 # ── Reply sequence weights ────────────────────────────────────────────────────
@@ -156,6 +158,8 @@ def post_turn(conversation_id: str):
     if body.speaker != "visitor":
         return TurnResponse(turn=saved_turn).model_dump(by_alias=True)
 
+    metrics.add_metric(name="VisitorTurnReceived", unit=MetricUnit.Count, value=1)
+
     # ── Fetch full history ────────────────────────────────────────────────────
     history_resp = db.turns_table.query(
         KeyConditionExpression=Key("conversation_id").eq(conversation_id),
@@ -244,5 +248,7 @@ def post_turn(conversation_id: str):
     # ── Record once-only idea as used ─────────────────────────────────────────
     if idea and idea.get("is_once_only"):
         _mark_idea_used(conversation_id, idea["idea_id"])
+
+    metrics.add_metric(name="ConsultantReplyGenerated", unit=MetricUnit.Count, value=len(consultant_replies))
 
     return TurnResponse(turn=saved_turn, consultant_replies=consultant_replies).model_dump(by_alias=True)

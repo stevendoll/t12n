@@ -47,7 +47,7 @@ Globals:
     Architectures: [arm64]
     MemorySize: 512
     Timeout: 30
-    Tracing: PassThrough
+    Tracing: Active
     Environment:
       Variables:
         ICEBREAKERS_TABLE: !Ref IcebreakersTable
@@ -90,7 +90,7 @@ Resources:
           Projection:
             ProjectionType: ALL
       PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: false
+        PointInTimeRecoveryEnabled: true
 
   ConversationTurnsTable:
     Type: AWS::DynamoDB::Table
@@ -113,7 +113,7 @@ Resources:
         AttributeName: ttl
         Enabled: true
       PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: false
+        PointInTimeRecoveryEnabled: true
 
   ConversationsTable:
     Type: AWS::DynamoDB::Table
@@ -129,7 +129,7 @@ Resources:
         - AttributeName: conversation_id
           KeyType: HASH
       PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: false
+        PointInTimeRecoveryEnabled: true
 
   ContactsTable:
     Type: AWS::DynamoDB::Table
@@ -145,7 +145,7 @@ Resources:
         - AttributeName: contact_id
           KeyType: HASH
       PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: false
+        PointInTimeRecoveryEnabled: true
 
   ConversationIdeasTable:
     Type: AWS::DynamoDB::Table
@@ -161,7 +161,7 @@ Resources:
         - AttributeName: idea_id
           KeyType: HASH
       PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: false
+        PointInTimeRecoveryEnabled: true
 
   AdminTokensTable:
     Type: AWS::DynamoDB::Table
@@ -180,7 +180,7 @@ Resources:
         AttributeName: ttl
         Enabled: true
       PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: false
+        PointInTimeRecoveryEnabled: true
 
   # ── Lambda Function ──────────────────────────────────────────────────────────
 
@@ -234,7 +234,8 @@ Resources:
       StageName: $default
       CorsConfiguration:
         AllowOrigins:
-          - "*"
+          - "https://t12n.ai"
+          - "http://localhost:5173"
         AllowMethods:
           - GET
           - POST

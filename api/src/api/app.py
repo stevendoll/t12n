@@ -14,7 +14,9 @@ Routes:
   GET  /admin/ideas                         — list all conversation ideas
   POST /admin/ideas                         — create idea
   PATCH /admin/ideas/{id}                   — update idea (toggle is_active, etc.)
-  POST /errors                              — client error reporting (TTS failures → Slack + SNS)
+  POST /errors                              — client error reporting (TTS failures → Slack)
+  POST /admin/login                         — request a magic-link login token
+  POST /admin/verify                        — exchange a magic-link token for a session
 
 Environment variables:
   ICEBREAKERS_TABLE   — DynamoDB table name
@@ -24,7 +26,7 @@ Environment variables:
   IDEAS_TABLE         — DynamoDB table name
 """
 
-from aws_lambda_powertools import Logger, Metrics
+from aws_lambda_powertools import Logger, Metrics, Tracer
 from aws_lambda_powertools.event_handler import APIGatewayHttpResolver, CORSConfig
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
@@ -33,8 +35,12 @@ from api.routers import icebreakers, turns, admin, contacts, conversations, idea
 
 logger  = Logger(service="t12n-api")
 metrics = Metrics(namespace="T12nApi")
+tracer  = Tracer(service="t12n-api")
 
-api = APIGatewayHttpResolver(cors=CORSConfig(allow_origin="*"))
+api = APIGatewayHttpResolver(cors=CORSConfig(
+    allow_origin="https://t12n.ai",
+    extra_origins=["http://localhost:5173"],
+))
 
 # Order matters: more-specific paths first
 api.include_router(icebreakers.router)   # GET /conversations/icebreakers
@@ -48,6 +54,8 @@ api.include_router(auth.router)          # POST /admin/login, POST /admin/verify
 
 
 @logger.inject_lambda_context(log_event=False)
+@tracer.capture_lambda_handler
+@metrics.log_metrics(capture_cold_start_metric=True, raise_on_empty_metrics=False)
 def handler(event: dict, context: LambdaContext) -> dict:
     if event.get("source") == "warmup":
         logger.info("Warmup ping — skipping resolver")
