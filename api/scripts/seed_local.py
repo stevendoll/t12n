@@ -15,21 +15,21 @@ _kwargs = {"endpoint_url": ENDPOINT} if ENDPOINT else {}
 dynamodb = boto3.resource("dynamodb", region_name=REGION, **_kwargs)
 
 ICEBREAKERS = [
-    "The gap between knowing and doing is costing us.",
-    "Our competitors moved six months ago. What are we waiting for?",
-    "We've talked about AI for two years. What's actually different this time?",
-    "The last initiative promised transformation. It delivered a pilot.",
-    "Your best people are leaving for companies that let them use better tools.",
-    "We're automating the wrong things.",
-    "The board is asking about AI. What's your answer?",
-    "Every month we wait, the gap gets harder to close.",
-    "We hired for what worked in 2020. That company doesn't exist anymore.",
-    "The data you need to decide is already inside your organization.",
-    "Moving fast without a plan is expensive. So is planning without moving.",
-    "Your AI vendor has a roadmap. Do you?",
-    "The risk isn't moving too fast. It's explaining why you moved too slow.",
-    "Transformation isn't an IT project.",
-    "You don't need more proof of concept. You need momentum.",
+    "This might be the biggest revolution of your career. It's also drinking your water supply to draft emails. [laughter] Let's talk about that.",
+    "Nine companies own most of the world's AI compute. Rent power from them wisely, or hand them your strategy for free.",
+    "The new job nobody warned you about: babysitting software that loses its mind at 2am. [laughter] Welcome to the future.",
+    "AI didn't take your job. It's just really good at pretending it could.",
+    "Somewhere, a tycoon's yacht got a little bigger this quarter. Not yours though. Let's fix that.",
+    "Your board wants an AI answer. 'We're thinking carefully' is a real one — for about two more quarters.",
+    "Misinformation travels faster with AI now. So does actual work. The tool doesn't pick a side. You do.",
+    "Skipping AI because it's messy is like skipping electricity because Edison was kind of a jerk. [laughter] Fair instinct. Still miss the whole thing.",
+    "Everyone you know is either an AI true believer or an AI doomer. Both are exhausting at dinner parties.",
+    "The last AI initiative promised transformation. It delivered a confident chatbot and a slide deck nobody read.",
+    "Moving fast without a plan is expensive. So is moving slow and calling it due diligence.",
+    "Your competitors aren't scared of AI. They're scared of explaining to the board why they waited.",
+    "AI makes mistakes. [laughter] So does your quarterly forecast. Only one of them is improving every month.",
+    "The data you need to decide is already inside your company. Finding it was never the hard part.",
+    "Nobody asks 'should we use electricity' anymore. Someday nobody asks this about AI either. The only real question is whether you paid attention on the way there.",
 ]
 
 
