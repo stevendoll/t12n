@@ -212,6 +212,11 @@ Resources:
               Resource: "*"
             - Effect: Allow
               Action:
+                - aws-marketplace:ViewSubscriptions
+                - aws-marketplace:Subscribe
+              Resource: "*"
+            - Effect: Allow
+              Action:
                 - ses:SendEmail
                 - sesv2:SendEmail
               Resource: "*"
