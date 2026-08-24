@@ -11,4 +11,4 @@ prompt record under [`prompts/`](prompts/).
 | 2026-08-24 | [this-week-quick-wins](prompts/2026-08-24-this-week-quick-wins.md) | [#36](https://github.com/stevendoll/t12n/pull/36) | 1 | 0 | +174/-32, 16 files | 12m49s (PR open→merge) |
 | 2026-08-24 | [brand-refresh-transformation](prompts/2026-08-24-brand-refresh-transformation.md) | [#48](https://github.com/stevendoll/t12n/pull/48) | 2 | 0 | +101/-100, 7 files | 13m53s (PR open→merge) |
 | 2026-08-24 | [claude-review-continue-on-error](prompts/2026-08-24-claude-review-continue-on-error.md) | [#49](https://github.com/stevendoll/t12n/pull/49) | 1 | 0 | +41/-1, 4 files | 6m40s (PR open→merge) |
-| 2026-08-24 | [homepage-typography-spacing](prompts/2026-08-24-homepage-typography-spacing.md) | [#50](https://github.com/stevendoll/t12n/pull/50) | 2 | 0 | +68/-12, 5 files | TBD |
+| 2026-08-24 | [homepage-typography-spacing](prompts/2026-08-24-homepage-typography-spacing.md) | [#50](https://github.com/stevendoll/t12n/pull/50) | 2 | 0 | +68/-12, 5 files | 1h1m55s (PR open→merge) |
