@@ -19,7 +19,7 @@ README diagram/API table, Dependabot.)
 - **Turns to completion:** 1
 - **Revisions requested:** 0
 - **Diff:** +174 / -32, 16 files
-- **Lead time:** _PR open → merge_
+- **Lead time:** PR open → merge: 12m49s (2026-08-24T03:39:17Z → 03:52:06Z)
 
 ## Notes
 
