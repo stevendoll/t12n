@@ -5,11 +5,19 @@ Website and API for [t12n.ai](https://t12n.ai) — AI Transformation Consulting.
 ## Structure
 
 ```
-├── ui/       React 19 + Vite 6 + TypeScript + Tailwind CSS 4
-├── api/      AWS Lambda + DynamoDB + Bedrock (Claude 3.5 Haiku)
-├── assets/   Brand assets (logo, rabbit, favicon source)
-└── scripts/  Smoke tests, session extractor
+├── ui/            React 19 + Vite 6 + TypeScript + Tailwind CSS 4
+├── api/           AWS Lambda + DynamoDB + Bedrock (Claude 3.5 Haiku)
+│   ├── tests/     Unit tests (pytest + moto)
+│   └── features/  BDD scenarios (behave) for the core conversation/contact flows
+├── assets/        Brand assets (logo, rabbit, favicon source)
+└── scripts/       Smoke tests, session extractor
 ```
+
+## Prompt traceability
+
+Every PR is traceable back to the prompt(s) that produced it — see
+[`docs/prompt-log.md`](docs/prompt-log.md) for the index and [`CLAUDE.md`](CLAUDE.md#prompt-traceability)
+for the convention.
 
 ## Local development
 
@@ -32,6 +40,19 @@ cp ui/.env.local.example ui/.env.local
 
 cd ui && npm install && npm run dev
 ```
+
+## Testing
+
+```bash
+cd api
+pipenv run python -m pytest tests/ -v --cov=src --cov-report=term-missing --cov-fail-under=60
+pipenv run behave
+```
+
+CI enforces the 60% coverage gate and runs the BDD scenarios on every PR (`ci.yml`), and
+again before every API deploy (`deploy-api.yml`). PRs also get an automated Claude review
+(`claude-review.yml`) — advisory, not a required check. See
+[`CLAUDE.md`](CLAUDE.md#testing--review-practices) for the full convention.
 
 ## Deployment
 
@@ -80,3 +101,8 @@ Each visitor turn is saved to DynamoDB, then the full conversation history is se
 | `VITE_CARTESIA_API_KEY` | Cartesia API key (baked into UI build) |
 | `VITE_CARTESIA_VOICE_ID` | Cartesia voice UUID |
 | `ACM_CERTIFICATE_ARN` | ACM cert for api.t12n.ai (us-east-1) |
+
+`claude-review.yml` needs no secret — it authenticates via Anthropic Workload Identity
+Federation (GitHub OIDC → short-lived Anthropic token), scoped in the Anthropic Console to
+this repo's `pull_request` events. The federation/org/service-account/workspace IDs in that
+workflow are identifiers, not credentials, so they're committed directly.

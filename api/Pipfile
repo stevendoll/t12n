@@ -11,7 +11,9 @@ requests = "*"
 
 [dev-packages]
 pytest = "*"
+pytest-cov = "*"
 moto = {extras = ["dynamodb"], version = "*"}
+behave = "*"
 
 [requires]
 python_version = "3.12"

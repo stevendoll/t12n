@@ -63,4 +63,7 @@ jobs:
             --paths "/*"
 
       - name: Smoke test
-        run: curl -sf https://t12n.ai > /dev/null && echo "UI smoke test passed"
+        run: |
+          curl -sf https://t12n.ai | grep -q 'id="root"' \
+            && echo "UI smoke test passed" \
+            || { echo "UI smoke test failed: root div not found in response"; exit 1; }
