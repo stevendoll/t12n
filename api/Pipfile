@@ -6,7 +6,7 @@ name = "pypi"
 [packages]
 boto3 = "*"
 aws-lambda-powertools = {extras = ["all"], version = "*"}
-pydantic = ">=2.13.4"
+pydantic = ">=2.13.5"
 requests = "*"
 
 [dev-packages]
