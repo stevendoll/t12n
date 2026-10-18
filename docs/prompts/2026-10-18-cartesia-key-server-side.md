@@ -2,7 +2,7 @@
 date: 2026-10-18
 session: 8193c476-b3cb-4ed6-904f-f94a491d5add
 effort: low
-pr: TBD
+pr: https://github.com/stevendoll/t12n/pull/57
 ---
 
 ## Prompt
@@ -13,10 +13,10 @@ pr: TBD
 
 ## Outcome
 
-- **PR:** TBD
+- **PR:** [#57](https://github.com/stevendoll/t12n/pull/57)
 - **Turns to completion:** 2
 - **Revisions requested:** 0
-- **Diff:** TBD
+- **Diff:** +253 / -85, 14 files (before this log-update commit)
 - **Lead time:** TBD
 
 ## Notes
