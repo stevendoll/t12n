@@ -17,7 +17,7 @@ pr: https://github.com/stevendoll/t12n/pull/57
 - **Turns to completion:** 2
 - **Revisions requested:** 0
 - **Diff:** +253 / -85, 14 files (before this log-update commit)
-- **Lead time:** TBD
+- **Lead time:** PR open → merge: 9m42s (2026-10-18T04:42:24Z → 04:52:06Z)
 
 ## Notes
 
@@ -32,3 +32,8 @@ with 404s), then `api/src/api/routers/tts.py` made them pass.
 
 Manual follow-up: add a `CARTESIA_API_KEY` GitHub secret (new key), deploy the API, then the
 UI, then delete the old key and the `VITE_CARTESIA_API_KEY` secret.
+
+Rollout completed the same session: `CARTESIA_API_KEY` secret set from the clipboard (never
+echoed), API + UI deploys succeeded, live `POST /tts/token` returned a token and the served
+bundle contained no `sk_car_` strings, then the `VITE_CARTESIA_API_KEY` secret and the leaked
+key were deleted.
