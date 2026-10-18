@@ -4,8 +4,6 @@ import { playTts } from '../lib/tts'
 import type { Conversation, Turn } from '../lib/types'
 import Nav from '../components/Nav'
 
-const CARTESIA_API_KEY = import.meta.env.VITE_CARTESIA_API_KEY as string
-
 const SPEAKER_LABEL: Record<string, string> = {
   visitor:     'You',
   consultant1: 'Alex',
@@ -75,7 +73,7 @@ export default function HistoryPage() {
       setReplayIdx(i)
       const voiceId = turn.voiceId ?? ''
       try {
-        await playTts(CARTESIA_API_KEY, voiceId, turn.text, ctx)
+        await playTts(voiceId, turn.text, ctx)
       } catch (e) {
         console.warn('Replay TTS error:', e)
       }

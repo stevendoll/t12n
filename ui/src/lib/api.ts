@@ -59,6 +59,10 @@ export function postError(error_type: string, message: string): Promise<{ ok: bo
   })
 }
 
+export function postTtsToken(): Promise<{ token: string }> {
+  return apiFetch('/tts/token', { method: 'POST' })
+}
+
 // ── Admin auth ────────────────────────────────────────────────────────────────
 
 export function postAdminLogin(email: string): Promise<{ ok: boolean }> {

@@ -36,7 +36,7 @@ make local-api-start
 
 ```bash
 cp ui/.env.local.example ui/.env.local
-# Fill in VITE_API_URL, VITE_CARTESIA_API_KEY, VITE_CARTESIA_VOICE_ID
+# Fill in VITE_API_URL, VITE_CARTESIA_VOICE_ID
 
 cd ui && npm install && npm run dev
 ```
@@ -124,7 +124,7 @@ Each visitor turn is saved to DynamoDB, then the full conversation history is se
 | `S3_BUCKET` | UI bucket name |
 | `CLOUDFRONT_DISTRIBUTION_ID` | CloudFront distribution for t12n.ai |
 | `VITE_API_URL` | `https://api.t12n.ai` |
-| `VITE_CARTESIA_API_KEY` | Cartesia API key (baked into UI build) |
+| `CARTESIA_API_KEY` | Cartesia API key — passed to the Lambda, which mints short-lived TTS access tokens via `POST /tts/token`; never baked into the UI build |
 | `VITE_CARTESIA_VOICE_ID` | Cartesia voice UUID |
 | `ACM_CERTIFICATE_ARN` | ACM cert for api.t12n.ai (us-east-1) |
 
